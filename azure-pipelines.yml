@@ -3,7 +3,7 @@ trigger:
 variables:
 - group: aws-credential-group
 - name: imageNameFrenchDataTransfer
-  value: 'french_data_transfer'
+  value: 'sirene_data_transfer'
 pool:
   vmImage: 'ubuntu-latest'
 jobs:
