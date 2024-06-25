@@ -42,7 +42,7 @@ jobs:
     - script: docker image ls
       displayName: 'Listing Docker containers for debug'
     - task: ECRPushImage@1
-      displayName: 'Pushing $(imageNameFrenchDataTransfer):latest to ECR'
+      displayName: 'Pushing $(imageNameFrenchDataTransfer):latest to AWS ECR'
       inputs:
         sourceImageName: $(imageNameFrenchDataTransfer)
         repositoryName: $(imageNameFrenchDataTransfer)
