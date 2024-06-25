@@ -1,0 +1,48 @@
+trigger:
+- master
+variables:
+- group: aws-credential-group
+- name: imageNameFrenchDataTransfer
+  value: 'french_data_transfer'
+pool:
+  vmImage: 'ubuntu-latest'
+jobs:
+- job: ConfigureAWSCredentials
+  steps:
+    - script: |
+        sudo pip3 install setuptools
+        sudo pip3 install --upgrade awscli
+      displayName: Install dependencies
+    - script: |
+        mkdir .aws
+        echo "[default]\naws_access_key_id=$(AWS_ACCESS_KEY_ID)\naws_secret_access_key=$(AWS_SECRET_ACCESS_KEY)" > ~/.aws/credentials
+        aws configure set region $(AWS_REGION)
+        $(aws ecr get-login --no-include-email)
+      displayName: Signing into AWS ECR
+- job: BuildAndPushDockerimage
+  dependsOn: ConfigureAWSCredentials
+  steps:
+    - checkout: self
+    - script: |
+        export AWS_ACCESS_KEY_ID=$(AWS_ACCESS_KEY_ID)
+        export AWS_SECRET_ACCESS_KEY=$(AWS_SECRET_ACCESS_KEY)
+        export AWS_REGION=$(AWS_REGION)
+      displayName: 'Adding environment variables for AWS'
+    - task: Docker@2
+      displayName: 'Building the french_data_transfer image'
+      inputs:
+        repository: $(imageNameFrenchDataTransfer)
+        command: 'build'
+        Dockerfile: './Dockerfile'
+        arguments: --build-arg AWS_ACCESS_KEY_ID_ARG=$(AWS_ACCESS_KEY_ID) --build-arg AWS_SECRET_ACCESS_KEY_ARG=$(AWS_SECRET_ACCESS_KEY) --build-arg AWS_REGION_ARG=$(AWS_REGION)
+        buildContext: .
+        tags: |
+          latest
+          $(Build.BuildId)
+    - script: docker image ls
+      displayName: 'Listing Docker containers for debug'
+    - task: ECRPushImage@1
+      displayName: 'Pushing $(imageNameFrenchDataTransfer):latest to ECR'
+      inputs:
+        sourceImageName: $(imageNameFrenchDataTransfer)
+        repositoryName: $(imageNameFrenchDataTransfer)
