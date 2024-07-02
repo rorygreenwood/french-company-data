@@ -173,14 +173,14 @@ def process_legal_fragment(filename: str) -> None:
     pldf = pldf.rename(unite_legale_cols)
 
     # remove records where a company name is not found
-    # todo perform a wider filtering of [ND], if a record has a lot of [ND] fields, especially fields we need, omit the record
+    # perform a wider filtering of [ND], if a record has a lot of [ND] fields, especially fields we need, omit the record
     pldf = pldf.filter(pl.col('LegalEntityName') != '[ND]')
     pldf.drop_nulls(subset='LegalEntityName')
 
     # drop records where the legal category is 0000; these are people and not companies
     pldf = pldf.filter(pl.col('LegalCategory') != '0000')
 
-    # todo for now, we are only accepting LegalCategory 5xxx, as these are societe commerciale and the priority
+    # for now, we are only accepting LegalCategory 5xxx, as these are societe commerciale and the priority
     logger.debug(f'size of fragment before filtering category for {filename}: {len(pldf)}')
 
     # filtering only on societe commercial

@@ -294,13 +294,15 @@ filestring = f'{current_date_year}-{current_date_month:02d}-01-StockEtablissemen
 logger.info(f'sending request with filestring: {filestring}')
 # check if zipfile is not already in the dir
 if filestring not in os.listdir():
+    logger.error(f'file {filestring} does not exist or {len(os.listdir("fragments"))} is not 1')
     t0 = time.time()
-    process_download(filestring=filestring)
+    if len(os.listdir('fragments')) == 1:
+        process_download(filestring=filestring)
     t1 = time.time()
     download_time = round(t1 - t0)
     logger.info(f'download and processing time: {download_time}')
 else:
-    logger.info('file already uploaded')
+    logger.info('file already uploaded OR fragments need to be processed')
 
 # process_download leaves the section fragments to be processed
 list_of_fragments = os.listdir('fragments')
