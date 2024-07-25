@@ -20,18 +20,25 @@ def connect_preprod():
     cursor = db.cursor()
     return cursor, db
 
+# required for polars
 constring = f'mysql://{os.environ.get("preprod-admin-user")}:{os.environ.get("preprod-admin-pass")}@{os.environ.get("preprod-host")}:3306/{os.environ.get("preprod-database")}'
 
-def pipeline_messenger(title, text, hexcolour_value):
+def pipeline_messenger(title, text, notification_type):
+
+
     messenger_colours = {
         'pass': '#00c400',
         'fail': '#c40000',
         'notification': '#0000c4'
     }
+
+    if notification_type not in messenger_colours.keys():
+        raise ValueError(f'Invalid notification type: {notification_type}')
+
     url = "https://tdworldwide.webhook.office.com/webhookb2/d5d1f4d1-2858-48a6-8156-5abf78a31f9b@7fe14ab6-8f5d-4139-84bf-cd8aed0ee6b9/IncomingWebhook/76b5bd9cd81946338da47e0349ba909d/c5995f3f-7ce7-4f13-8dba-0b4a7fc2c546"
     payload = json.dumps({
         "@type": "MessageCard",
-        "themeColor": messenger_colours[hexcolour_value],
+        "themeColor": messenger_colours[notification_type],
         "title": title,
         "text": text,
         "markdown": True
