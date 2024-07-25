@@ -18,7 +18,13 @@ logging.basicConfig(level=logging.INFO, format=format_str)
 logger = logging.getLogger(__name__)
 
 
-def create_address_line(input_dict: dict) -> str:
+def create_address_line_1(input_dict: dict) -> str:
+    """
+    creates a concat of the columns AddressBuildingBlock, AddressNumber and AddressNumberSubUnit
+    for insertion into preprod.geo_location_staging
+    :param input_dict:
+    :return:
+    """
     # AddressBuildingBlock
     # AddressNumber
     # AddressNumberSubUnit
@@ -31,7 +37,13 @@ def create_address_line(input_dict: dict) -> str:
     return output_str
 
 
-def create_address_line(input_dict: dict) -> str:
+def create_address_line_2(input_dict: dict) -> str:
+    """
+    creates a concat of the columns AddressUniqueIdentifier, AddressLabel
+    for insertion into preprod.geo_location
+    :param input_dict:
+    :return:
+    """
     # AddressUniqueIdentifier
     # AddressLabel
     output_str_list = []
@@ -43,12 +55,23 @@ def create_address_line(input_dict: dict) -> str:
 
 
 def assign_office_type(input_dict: dict) -> str:
+    """
+    two office types in geo_location, depending on whether True or False, it will be either Head Office or
+    Sub Office
+    :param input_dict:
+    :return:
+    """
     if input_dict['RegisteredOfficeBool']:
         return 'HEAD_OFFICE'
     elif not input_dict['RegisteredOfficeBool']:
         return 'SUB_OFFICE'
 
 def create_org_id(input_dict: dict) -> str:
+    """
+    develop organisation id
+    :param input_dict:
+    :return:
+    """
     if len(input_dict['company_number']) == 9:
         return 'FR' + str(input_dict['company_number'])
     else:
@@ -56,12 +79,25 @@ def create_org_id(input_dict: dict) -> str:
         quit()
 
 def generate_geo_md5(input_dict: dict) -> str:
+    """
+    generate md5 string for unique id when inserting into geolocation
+
+    in the case of a null postcode, we change this to empty string
+    :param input_dict:
+    :return:
+    """
     if input_dict['AddressPostcode'] is None:
         input_dict['AddressPostcode'] = ''
     concat_str = input_dict['id'] + input_dict['AddressPostcode']
     return hashlib.md5(str(concat_str).encode('utf-8')).hexdigest()
 
 def process_etab_fragment(filename: str) -> None:
+    """
+    main process to write StockEtablissement
+    upserts to geo_location
+    :param filename:
+    :return:
+    """
     unite_etab_cols = {
         'siren': 'company_number',  #
         'nic': 'localnic',  #
@@ -151,13 +187,13 @@ def process_etab_fragment(filename: str) -> None:
     # todo exceptions.ComputeError: TypeError: sequence item 0: expected str instance, NoneType found
 
     pldf = pldf.with_columns(
-        pl.struct(['AddressBuildingBlock', 'AddressNumber', 'AddressNumberSubUnit']).apply(create_address_line).alias(
+        pl.struct(['AddressBuildingBlock', 'AddressNumber', 'AddressNumberSubUnit']).apply(create_address_line_1).alias(
             'address_line_1'))
 
     # create second line of address
     pldf = pldf.with_columns(pl.struct(
         ['AddressUniqueIdentifier', 'AddressLabel']).apply(
-        create_address_line).alias('address_line_2'))
+        create_address_line_2).alias('address_line_2'))
 
     # determine whether the office is a head office or no
     pldf = pldf.with_columns(

@@ -5,11 +5,10 @@ import zipfile
 import requests
 from filesplit.split import Split
 
-from utils import connect_preprod
+from utils import connect_preprod, constring
 
 cursor, db = connect_preprod()
 
-constring = f'mysql://{os.environ.get("ADMINUSER")}:{os.environ.get("ADMINPASS")}@{os.environ.get("PREPRODHOST")}:3306/{os.environ.get("DATABASE")}'
 
 format_str = "[%(levelname)s: %(lineno)d] %(message)s"
 logging.basicConfig(level=logging.INFO, format=format_str)

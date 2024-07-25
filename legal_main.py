@@ -19,6 +19,13 @@ logger = logging.getLogger(__name__)
 
 
 def map_employee_count(input_dict: dict) -> str:
+    """
+    sirene provides a code for each number of employees
+    these are mapped to a table in the documentation
+     made available at https://www.sirene.fr/static-resources/htm/v_sommaire_311.htm#27
+    :param input_dict:
+    :return:
+    """
     tranche_effectis_dict = {  # dictionary of what each number means in terms of workers
         '0': '0 fulltime employees',
         '00': '0 fulltime employees',
@@ -48,6 +55,11 @@ def map_employee_count(input_dict: dict) -> str:
         return 'NA'
 
 def create_org_id(input_dict: dict) -> str:
+    """
+    create an organisation id for matching in organisation
+    :param input_dict:
+    :return:
+    """
     return 'FR' + str(input_dict['company_number'])
 
 def map_company_activity(input_dict: dict) -> str:
@@ -64,7 +76,7 @@ def map_company_activity(input_dict: dict) -> str:
 def map_company_type(input_dict: dict) -> str:
     """
     index the first two numbers of the code, and map it to the first two digits of the mapping csv provided by sirene
-    and found at
+    and found at https://www.sirene.fr/static-resources/htm/v_sommaire_311.htm#27
     :param input_dict:
     :return:
     """
@@ -122,6 +134,12 @@ def map_company_type(input_dict: dict) -> str:
     return company_type_map[input_dict['LegalCategory'][0:2]]
 
 def process_legal_fragment(filename: str) -> None:
+    """
+    main process to write to StockLegale
+    upserts to organisation and naf_code
+    :param filename:
+    :return:
+    """
     unite_legale_cols = {
         # breakdowns of each column name can be found on https://www.sirene.fr/static-resources/htm/v_sommaire_311.htm#7
         'siren': 'company_number',  # we know this one
