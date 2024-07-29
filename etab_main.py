@@ -7,11 +7,9 @@ import time
 import polars as pl
 
 from download_files import process_download
-from utils import connect_preprod, pipeline_messenger
+from utils import connect_preprod, pipeline_messenger, constring
 
 cursor, db = connect_preprod()
-
-constring = f'mysql://{os.environ.get("ADMINUSER")}:{os.environ.get("ADMINPASS")}@{os.environ.get("PREPRODHOST")}:3306/{os.environ.get("DATABASE")}'
 
 format_str = "[%(levelname)s: %(lineno)d] %(message)s"
 logging.basicConfig(level=logging.INFO, format=format_str)
