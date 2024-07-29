@@ -1,7 +1,7 @@
 trigger:
 - master
 variables:
-- group: aws-credential-group
+- group: preprod-credential-group
 - group: aws-access-credentials-data-services
 - name: imageNameFrenchDataTransfer
   value: 'sirene-pipeline-container'
