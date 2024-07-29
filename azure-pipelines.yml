@@ -8,6 +8,12 @@ variables:
 pool:
   vmImage: 'ubuntu-latest'
 jobs:
+- job: PrintAWSCredentials
+  steps:
+    - script: |
+        echo $(AWS_ACCESS_KEY_ID)
+        echo $(AWS_SECRET_ACCESS_KEY)
+      displayName: Printing Credentials
 - job: ConfigureAWSCredentials
   steps:
     - script: |
