@@ -5,7 +5,7 @@ import zipfile
 import requests
 from filesplit.split import Split
 
-from utils import connect_preprod, constring
+from utils import connect_preprod, return_file_date
 
 cursor, db = connect_preprod()
 
@@ -17,11 +17,9 @@ logger = logging.getLogger(__name__)
 
 files_url = 'https://files.data.gouv.fr/insee-sirene/'
 
-# place file names here
-# filestring=['2024-06-01-StockEtablissement_utf8.zip', '2024-05-06-StockUniteLegale_utf8.zip']
-
 # for testing purposes, we are running it on one file
-filestring = '2024-06-01-StockUniteLegale_utf8.zip'
+current_month_date = return_file_date()
+filestring = f'{current_month_date}-StockUniteLegale_utf8.zip'
 def process_download(filestring: str):
     """check for file, if not exists, download, unzip and split"""
     # build the url for the request, by appending filestring var to files_url

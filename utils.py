@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import mysql.connector
 import os
 import requests
@@ -11,17 +13,17 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
 def connect_preprod():
     db = mysql.connector.connect(
-        host=os.environ.get('preprod-host'),
-        user=os.environ.get('preprod-admin-user'),
-        passwd=os.environ.get('preprod-admin-pass'),
-        database=os.environ.get('preprod-database'),
+        host=os.environ.get('preprod_host'),
+        user=os.environ.get('preprod_admin_user'),
+        passwd=os.environ.get('preprod_admin_pass'),
+        database=os.environ.get('preprod_database'),
     )
 
     cursor = db.cursor()
     return cursor, db
 
 # required for polars
-constring = f'mysql://{os.environ.get("preprod-admin-user")}:{os.environ.get("preprod-admin-pass")}@{os.environ.get("preprod-host")}:3306/{os.environ.get("preprod-database")}'
+constring = f'mysql://{os.environ.get("preprod_admin_user")}:{os.environ.get("preprod_admin_pass")}@{os.environ.get("preprod_host")}:3306/{os.environ.get("preprod_database")}'
 
 def pipeline_messenger(title, text, notification_type):
 
@@ -51,9 +53,9 @@ def pipeline_messenger(title, text, notification_type):
 
 def create_s3_connection() -> boto3.client:
     s3client = boto3.client('s3',
-                            aws_access_key_id=os.environ.get('aws-access-key-id-data-services'),
-                            aws_secret_access_key=os.environ.get('aws-secret-key-data-services'),
-                            region_name=os.environ.get('aws-region')
+                            aws_access_key_id=os.environ.get('aws_access_key_id_data_services'),
+                            aws_secret_access_key=os.environ.get('aws_secret_key_data_services'),
+                            region_name=os.environ.get('aws_region')
                             )
     buckets = s3client.list_buckets()
     return s3client
@@ -103,6 +105,16 @@ def upload_file(client: boto3.client, filename: str, target_bucket: str) -> None
     logger.info(f'upload took {round(t1 - t0)} seconds, check {target_bucket} for {target_file_name}')
 
 s3_conn = create_s3_connection()
+
+def return_file_date() -> str:
+    """
+    get the date for a file, where the day is the 1st.
+    :return:
+    """
+    now = datetime.today()
+    month = now.month
+    year = now.year
+    return f'{year}-{month}-01'
 
 filename = '2024-07-01-StockUniteLegale_utf8.zip'
 
