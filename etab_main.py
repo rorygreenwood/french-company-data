@@ -323,50 +323,54 @@ def process_etab_fragment(filename: str) -> None:
     t1 = time.time()
     logger.info('time taken for upsert to live etab table: {}'.format(round(t1 - t0)))
 
-current_date_month = datetime.datetime.now().month
-current_date_year = datetime.datetime.now().year
-filestring = f'{current_date_year}-{current_date_month:02d}-01-StockEtablissement_utf8.zip'
 
-logger.info(f'sending request with filestring: {filestring}')
-# check if zipfile is not already in the dir
-if filestring not in os.listdir():
-    logger.error(f'file {filestring} does not exist or {len(os.listdir("fragments"))} is not 1')
-    t0 = time.time()
-    if len(os.listdir('fragments')) == 1:
-        process_download(filestring=filestring)
-    t1 = time.time()
-    download_time = round(t1 - t0)
-    logger.info(f'download and processing time: {download_time}')
-else:
-    logger.info('file already uploaded OR fragments need to be processed')
+def run_etab():
+    current_date_month = datetime.datetime.now().month
+    current_date_year = datetime.datetime.now().year
+    filestring = f'{current_date_year}-{current_date_month:02d}-01-StockEtablissement_utf8.zip'
 
-# process_download leaves the section fragments to be processed
-list_of_fragments = os.listdir('fragments')
-fragcount = 0
-try:
-    t0 = time.time()
-    fragment_times = []
-    for fragment in list_of_fragments:
-        if 'Etablissement' in filestring and 'Etablissement' in fragment:
-            f_t0 = time.time()
-            process_etab_fragment(filename='fragments/' + fragment)
-            os.remove('fragments/' + fragment)
-            fragcount += 1
-            f_t1 = time.time()
-            fragment_time_taken = round(f_t1 - f_t0)
-            fragment_times.append(fragment_time_taken)
-    t1 = time.time()
-    avg_time_taken = round(sum(fragment_times) / len(fragment_times), 2)
-    time_taken = t1 - t0
-    pipeline_messenger(
-    title= 'Sirene Stock Etablissement Pipeline has run',
-    text= f'time taken: {time_taken}, average time per fragment: {avg_time_taken} seconds',
-    hexcolour_value= 'pass'
-    )
+    logger.info(f'sending request with filestring: {filestring}')
+    # check if zipfile is not already in the dir
+    if filestring not in os.listdir():
+        logger.error(f'file {filestring} does not exist or {len(os.listdir("fragments"))} is not 1')
+        t0 = time.time()
+        if len(os.listdir('fragments')) == 1:
+            process_download(filestring=filestring)
+        t1 = time.time()
+        download_time = round(t1 - t0)
+        logger.info(f'download and processing time: {download_time}')
+    else:
+        logger.info('file already uploaded OR fragments need to be processed')
 
-except Exception as e:
-    pipeline_messenger(
-        title='Sirene Stock Etablissement Pipeline has failed',
-        text= f'Error in file: {filestring} - {e}',
-        hexcolour_value='fail'
-    )
+    # process_download leaves the section fragments to be processed
+    list_of_fragments = os.listdir('fragments')
+    fragcount = 0
+    try:
+        t0 = time.time()
+        fragment_times = []
+        for fragment in list_of_fragments:
+            if 'Etablissement' in filestring and 'Etablissement' in fragment:
+                f_t0 = time.time()
+                process_etab_fragment(filename='fragments/' + fragment)
+                os.remove('fragments/' + fragment)
+                fragcount += 1
+                f_t1 = time.time()
+                fragment_time_taken = round(f_t1 - f_t0)
+                fragment_times.append(fragment_time_taken)
+        t1 = time.time()
+        avg_time_taken = round(sum(fragment_times) / len(fragment_times), 2)
+        time_taken = t1 - t0
+        pipeline_messenger(
+        title= 'Sirene Stock Etablissement Pipeline has run',
+        text= f'time taken: {time_taken}, average time per fragment: {avg_time_taken} seconds',
+        notification_type= 'pass'
+        )
+
+    except Exception as e:
+        pipeline_messenger(
+            title='Sirene Stock Etablissement Pipeline has failed',
+            text= f'Error in file: {filestring} - {e}',
+            notification_type='fail'
+        )
+
+

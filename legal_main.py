@@ -345,52 +345,53 @@ def process_legal_fragment(filename: str) -> None:
     t1 = time.time()
     logger.info('time taken to upsert into live tables: {}'.format(round(t1-t0)))
 
-# in the future, this will be the curdate month
-current_date_month = datetime.datetime.now().month
-current_date_year = datetime.datetime.now().year
-filestring = f'{current_date_year}-{current_date_month:02d}-01-StockUniteLegale_utf8.zip'
-logger.info(f'sending request with filestring: {filestring}')
+def run_legal():
+    # in the future, this will be the curdate month
+    current_date_month = datetime.datetime.now().month
+    current_date_year = datetime.datetime.now().year
+    filestring = f'{current_date_year}-{current_date_month:02d}-01-StockUniteLegale_utf8.zip'
+    logger.info(f'sending request with filestring: {filestring}')
 
-# check if zipfile is not already in the dir
-if filestring not in os.listdir():
-    t0 = time.time()
-    process_download(filestring=filestring)
-    t1 = time.time()
-    download_time = round(t1 - t0)
-    logger.info(f'download and processing time: {download_time}')
-else:
-    logger.info('file already downloaded')
+    # check if zipfile is not already in the dir
+    if filestring not in os.listdir():
+        t0 = time.time()
+        process_download(filestring=filestring)
+        t1 = time.time()
+        download_time = round(t1 - t0)
+        logger.info(f'download and processing time: {download_time}')
+    else:
+        logger.info('file already downloaded')
 
-# process_download leaves the section fragments to be processed
-list_of_fragments = os.listdir('fragments')
-frag_count = 0
-try:
-    t0 = time.time()
-    fragment_times = []
-    for fragment in list_of_fragments:
-        logger.info(fragment)
-        if 'Legal' in filestring and 'Legal' in fragment:
-            f_t0 = time.time()
-            process_legal_fragment(filename='fragments/' + fragment)
-            os.remove('fragments/' + fragment)
-            frag_count += 1
-            f_t1 = time.time()
-            fragment_time_taken = round(f_t1 - f_t0)
-            fragment_times.append(fragment_time_taken)
-    t1 = time.time()
+    # process_download leaves the section fragments to be processed
+    list_of_fragments = os.listdir('fragments')
+    frag_count = 0
+    try:
+        t0 = time.time()
+        fragment_times = []
+        for fragment in list_of_fragments:
+            logger.info(fragment)
+            if 'Legal' in filestring and 'Legal' in fragment:
+                f_t0 = time.time()
+                process_legal_fragment(filename='fragments/' + fragment)
+                os.remove('fragments/' + fragment)
+                frag_count += 1
+                f_t1 = time.time()
+                fragment_time_taken = round(f_t1 - f_t0)
+                fragment_times.append(fragment_time_taken)
+        t1 = time.time()
 
-    avg_time_taken = round(sum(fragment_times) / len(fragment_times), 2)
+        avg_time_taken = round(sum(fragment_times) / len(fragment_times), 2)
 
-    time_taken = t1-t0
+        time_taken = t1-t0
 
-    pipeline_messenger(
-        title='Sirene Stock Unite Legale Pipeline has run',
-        text=f'time taken: {time_taken}\n average time per fragment: {avg_time_taken}',
-        hexcolour_value='pass'
-    )
-except Exception as e:
-    pipeline_messenger(
-        title='Sirene Stock Unite Legale Pipeline has failed',
-        text= f'Error in file: {filestring} - {e}',
-        hexcolour_value='fail'
-    )
+        pipeline_messenger(
+            title='Sirene Stock Unite Legale Pipeline has run',
+            text=f'time taken: {time_taken}\n average time per fragment: {avg_time_taken}',
+            notification_type='pass'
+        )
+    except Exception as e:
+        pipeline_messenger(
+            title='Sirene Stock Unite Legale Pipeline has failed',
+            text= f'Error in file: {filestring} - {e}',
+            notification_type='fail'
+        )
