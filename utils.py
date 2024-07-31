@@ -8,6 +8,7 @@ import boto3
 import time
 import re
 import logging
+import zipfile
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
@@ -104,8 +105,6 @@ def upload_file(client: boto3.client, filename: str, target_bucket: str) -> None
     t1 = time.time()
     logger.info(f'upload took {round(t1 - t0)} seconds, check {target_bucket} for {target_file_name}')
 
-s3_conn = create_s3_connection()
-
 def return_file_date() -> str:
     """
     get the date for a file, where the day is the 1st.
@@ -117,6 +116,13 @@ def return_file_date() -> str:
     return f'{year}-{month}-01'
 
 filename = '2024-07-01-StockUniteLegale_utf8.zip'
-
+def unzip_file(filename: str) -> str:
+    with zipfile.ZipFile(filename, 'r') as zip_ref:
+        zip_ref.extractall()
+        infolist = zip_ref.infolist()
+        if infolist:
+            output = infolist[0].filename
+        zip_ref.close()
+    return output
 if __name__ == '__main__':
     upload_file(s3_conn, filename, 'iqblade-data-services-sirene-incoming-files')
