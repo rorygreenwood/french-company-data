@@ -1,4 +1,5 @@
-from download_files import process_download
+from download_files import process_download, split_file, unzip_file
+from larger_legal_file_process import legal_file_process
 import time
 import datetime
 import os
@@ -9,11 +10,9 @@ import logging
 from utils import connect_preprod, pipeline_messenger, constring
 
 cursor, db = connect_preprod()
-
-format_str = "[%(levelname)s: %(lineno)d] %(message)s"
-logging.basicConfig(level=logging.INFO, format=format_str)
-logger = logging.getLogger(__name__)
-
+logger = logging.getLogger()
+logging.basicConfig(level=logging.INFO,
+                    format='%(filename)s line:%(lineno)d %(message)s')
 
 
 def map_employee_count(input_dict: dict) -> str:
@@ -138,94 +137,12 @@ def process_legal_fragment(filename: str) -> None:
     :param filename:
     :return:
     """
-    unite_legale_cols = {
-        # breakdowns of each column name can be found on https://www.sirene.fr/static-resources/htm/v_sommaire_311.htm#7
-        'siren': 'company_number',  # we know this one
-        'statutDiffusionUniteLegale': 'LegalUnitBroadcastID',  # Dissemination status of the legal unit.
-        'unitePurgeeUniteLegale': 'PurgeStatus',  # whether or not the legal unit has been purged (removed?)
-        'dateCreationUniteLegale': 'DateCreated',  # date the
-        'sigleUniteLegale': 'LegalAcronym',  # legal acronym?
-        'sexeUniteLegale': 'GenderOfPerson',  # person/company's gender?
-        'prenom1UniteLegale': 'NaturalName1',  # not applicable to legal entities
-        'prenom2UniteLegale': 'NaturalName2',  # not applicable to legal entities
-        'prenom3UniteLegale': 'NaturalName3',  # not applicable to legal entities
-        'prenom4UniteLegale': 'NaturalName4',  # not applicable to legal entities
-        'prenomUsuelUniteLegale': 'PreferredName',  # not applicable to legal entities
-        'pseudonymeUniteLegale': 'pseudonym',  # pseudonym of the natural person
-        'identifiantAssociationUniteLegale': 'RNANumber',  #
-        'trancheEffectifsUniteLegale': 'EmployeeCountCategory',
-        'anneeEffectifsUniteLegale': 'EmployeeCountCategoryDateUpdated', # year when the employee number was last recorded
-        'dateDernierTraitementUniteLegale': 'LegalUnitUpdated',  #
-        'nombrePeriodesUniteLegale': 'TimeAsLegalUnit',  #
-        'categorieEntreprise': 'BusinessCategory',  # either SME (small-medium enterprise), Medium (ETI) or GE (Large)
-        'anneeCategorieEntreprise': 'YearOfBusinessCategoryAssignment',  #
-        'dateDebut': 'DateOfBusinessStart',  #
-        'etatAdministratifUniteLegale': 'AdministrativeStatus',  # A means active, C means inactive
-        'nomUniteLegale': 'PersonBirthName',  # not applicable
-        'nomUsageUniteLegale': 'PersonUsedName',  # not applicable
-        'denominationUniteLegale': 'LegalEntityName',  # company name
-        'denominationUsuelle1UniteLegale': 'LegalEntityName1',  # company name
-        'denominationUsuelle2UniteLegale': 'LegalEntityName2',  # company name
-        'denominationUsuelle3UniteLegale': 'LegalEntityName3',  # company name
-        'categorieJuridiqueUniteLegale': 'LegalCategory',  #
-        'activitePrincipaleUniteLegale': 'NAFCategory',  # different naf based on when the company set up
-        'nomenclatureActivitePrincipaleUniteLegale': 'ActiveLegalUnit',  #
-        'nicSiegeUniteLegale': 'NICAssignment',  #
-        'economieSocialeSolidaireUniteLegale': 'SSEBool',  #
-        'societeMissionUniteLegale': 'MissionDrivenCompanyBool',  #
-        'caractereEmployeurUniteLegale': 'EmployerNature',  # largely null according to sirene
-    }
 
-    # prepare the stock legal file for insert into staging
-    t0 = time.time()
-    pldf = pl.read_csv(filename, dtypes={'codeCommuneEtablissement': pl.Utf8,
-                                         'siren': pl.Utf8,
+    pldf = pl.read_csv(filename, dtypes={
+                                         'company_number': pl.Utf8,
                                          'siret': pl.Utf8,
-                                         'categorieJuridiqueUniteLegale': pl.Utf8,
-                                         'trancheEffectifsUniteLegale': pl.Utf8},
-
-                       ignore_errors=False)
-
-    pldf = pldf.rename(unite_legale_cols)
-
-    # remove records where a company name is not found
-    # perform a wider filtering of [ND], if a record has a lot of [ND] fields, especially fields we need, omit the record
-    pldf = pldf.filter(pl.col('LegalEntityName') != '[ND]')
-    pldf.drop_nulls(subset='LegalEntityName')
-
-    # drop records where the legal category is 0000; these are people and not companies
-    pldf = pldf.filter(pl.col('LegalCategory') != '0000')
-
-    # for now, we are only accepting LegalCategory 5xxx, as these are societe commerciale and the priority
-    logger.debug(f'size of fragment before filtering category for {filename}: {len(pldf)}')
-
-    # filtering only on societe commercial
-    pldf = pldf.filter(pl.col('LegalCategory').str.slice(0,1) ==  '5')
-    logger.debug(f'size of fragment after filtering category for {filename}: {len(pldf)}')
-
-    # map company_type ids
-    pldf = pldf.with_columns(pl.struct(['LegalCategory']).apply(map_company_type, return_dtype=pl.Utf8).alias('company_type'))
-
-    # writeup company id
-    pldf = pldf.with_columns(pl.struct(['company_number']).apply(create_org_id, return_dtype=pl.Utf8).alias('id'))
-
-    # add additional columns required from organisation insert
-    pldf = pldf.with_columns(country=pl.lit('FRANCE'),
-                      country_code=pl.lit('FR'))
-
-    # determine whether or not the company is active or inactive
-    pldf = pldf.with_columns(pl.struct(['AdministrativeStatus']).apply(map_company_activity, return_dtype=pl.Utf8).alias('company_status'))
-
-    # map the category provided by siren to their documentation to get a range of numbers for employees, rather than a
-    # representative category
-    pldf = pldf.with_columns(pl.struct(['EmployeeCountCategory']).apply(map_employee_count, return_dtype=pl.Utf8).alias('EmployeeCount'))
-    t1 = time.time()
-    logger.info('time taken to prepare stock legal: {}'.format(round(t1 - t0)))
-
-    # for diagnostic purposes, add filenames and update times into the dataframe
-    pldf = pldf.with_columns(pl.lit(filename + ' - insert').alias('last_modified_by'))
-    pldf = pldf.with_columns(pl.lit(datetime.datetime.now()).alias('last_modified_date'))
-
+                                         'LegalCategory': pl.Utf8,
+                                         'EmployeeCountCategory': pl.Utf8})
     # sending polars dataframe to staging table
     t0 = time.time()
     pldf.write_database(table_name='sirene_stocklegal_staging',
@@ -353,7 +270,15 @@ def run_legal():
     # check if zipfile is not already in the dir
     if filestring not in os.listdir():
         t0 = time.time()
-        process_download(filestring=filestring)
+        # download file
+        # zipped_file = '2024-08-01-StockUniteLegale_utf8.zip'
+        zipped_file = process_download(filestring=filestring)
+        # unzip file
+        unzipped_file = unzip_file(filestring=zipped_file)
+        # process unzipped file
+        processed_file = legal_file_process(filename=unzipped_file)
+        # split processed file
+        split_file(processed_file)
         t1 = time.time()
         download_time = round(t1 - t0)
         logger.info(f'download and processing time: {download_time}')
@@ -362,10 +287,11 @@ def run_legal():
 
     # process_download leaves the section fragments to be processed
     list_of_fragments = os.listdir('fragments')
-    frag_count = 0
+    frag_count = 1
     try:
         t0 = time.time()
         fragment_times = []
+        logger.debug('processing fragments')
         for fragment in list_of_fragments:
             logger.info(fragment)
             if 'Legal' in filestring and 'Legal' in fragment:
@@ -377,10 +303,11 @@ def run_legal():
                 fragment_time_taken = round(f_t1 - f_t0)
                 fragment_times.append(fragment_time_taken)
         t1 = time.time()
+        time_taken = t1 - t0
+        logger.info('total time for processing: {}'.format(time_taken))
+        avg_time_taken = round(sum(fragment_times) / (len(fragment_times)-1), 2)
+        logger.info('average fragment processing time: {}'.format(avg_time_taken))
 
-        avg_time_taken = round(sum(fragment_times) / len(fragment_times), 2)
-
-        time_taken = t1-t0
 
         pipeline_messenger(
             title='Sirene Stock Unite Legale Pipeline has run',
@@ -393,3 +320,6 @@ def run_legal():
             text= f'Error in file: {filestring} - {e}',
             notification_type='fail'
         )
+
+if __name__ == '__main__':
+    run_legal()

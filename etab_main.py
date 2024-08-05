@@ -6,8 +6,9 @@ import time
 
 import polars as pl
 
-from download_files import process_download
+from download_files import process_download, unzip_file, split_file
 from utils import connect_preprod, pipeline_messenger, constring
+from larger_etab_file_process import etab_file_process
 
 cursor, db = connect_preprod()
 
@@ -156,54 +157,19 @@ def process_etab_fragment(filename: str) -> None:
         'caractereEmployeurEtablissement': 'EmploymentType',  #
     }
 
-    t0 = time.time()
-    pldf = pl.read_csv(filename, dtypes={'codeCommuneEtablissement': pl.Utf8,
-                                         'codeCedexEtablissement': pl.Utf8,
-                                         'numeroVoieEtablissement': pl.Utf8,
-                                         'codePostalEtablissement': pl.Utf8,
-                                         'numeroVoie2Etablissement': pl.Utf8,
-                                         'codePostal2Etablissement': pl.Utf8,
-                                         'distributionSpecialeEtablissement': pl.Utf8,
-                                         'complementAdresseEtablissement': pl.Utf8,
+    pldf = pl.read_csv(filename, dtypes={'AddressCommuneCode': pl.Utf8,
+                                         'AddressCommuneCode2': pl.Utf8,
+                                         'AddressCEDEXCode': pl.Utf8,
+                                         'AddressCedexCode2': pl.Utf8,
+                                         'AddressNumber': pl.Utf8,
+                                         'AddressNumber2': pl.Utf8,
+                                         'AddressPostcode': pl.Utf8,
+                                         'AddressPostcode2': pl.Utf8,
+                                         'AddressPOBox': pl.Utf8,
+                                         'AddressBuildingBlock': pl.Utf8,
                                          'siren': pl.Utf8}, ignore_errors=True,
                        null_values=['[ND]', 'NN'])
-    pldf = pldf.rename(unite_etab_cols)
-    pldf = pldf.fill_null('')
-    pldf = pldf.fill_nan('')
-    pldf = pldf.with_columns(pl.struct(['company_number']).apply(create_org_id, return_dtype=pl.Utf8).alias('id'))
 
-    # todo remove closed addresses
-    logger.debug(f'size of file before removing closed offices for {filename}: {len(pldf)}')
-    pldf = pldf.filter(pl.col('AdministrativeStatus') != 'F')
-    logger.debug(f'size of file after removing closed offices for {filename}: {len(pldf)}')
-
-    # generate md5 hash
-    pldf = pldf.with_columns(
-        pl.struct(['id', 'AddressPostcode']).apply(generate_geo_md5, return_dtype=pl.Utf8).alias('geo_md5'))
-
-    # create first line of address
-    # todo exceptions.ComputeError: TypeError: sequence item 0: expected str instance, NoneType found
-
-    pldf = pldf.with_columns(
-        pl.struct(['AddressBuildingBlock', 'AddressNumber', 'AddressNumberSubUnit']).apply(create_address_line_1).alias(
-            'address_line_1'))
-
-    # create second line of address
-    pldf = pldf.with_columns(pl.struct(
-        ['AddressUniqueIdentifier', 'AddressLabel']).apply(
-        create_address_line_2).alias('address_line_2'))
-
-    # determine whether the office is a head office or no
-    pldf = pldf.with_columns(
-        pl.struct(['RegisteredOfficeBool']).apply(assign_office_type).alias('registered_office_type'))
-
-    t1 = time.time()
-    logger.info('Preparing etab file in {:.2f} seconds'.format(t1 - t0))
-
-    # for diagnostic purposes, add filenames and update times into the dataframe
-    pldf = pldf.with_columns(pl.lit(filename + ' - insert').alias('last_modified_by'))
-    pldf = pldf.with_columns(pl.lit(datetime.datetime.now()).alias('last_modified_date'))
-    
     # write to staging table
     t0 = time.time()
     pldf.write_database(table_name='sirene_stocketab_staging', connection_uri=constring, if_exists='append')
@@ -333,7 +299,20 @@ def run_etab():
         logger.error(f'file {filestring} does not exist or {len(os.listdir("fragments"))} is not 1')
         t0 = time.time()
         if len(os.listdir('fragments')) == 1:
+            logger.info(f'no fragments found in file, downloading new file')
+
+            # download the lastest file
             process_download(filestring=filestring)
+
+            # unzip the file and return a .csv
+            unzipped_file = unzip_file(filestring=filestring)
+
+            # process and filter the etab csv
+            clean_etab_file = etab_file_process(unzipped_file)
+
+            # split the processed file
+            split_file(unzipped_file_name=clean_etab_file)
+
         t1 = time.time()
         download_time = round(t1 - t0)
         logger.info(f'download and processing time: {download_time}')
@@ -371,4 +350,5 @@ def run_etab():
             notification_type='fail'
         )
 
-
+if __name__ == '__main__':
+    run_etab()
