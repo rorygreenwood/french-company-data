@@ -8,7 +8,7 @@ import polars as pl
 
 from download_files import process_download, unzip_file, split_file
 from utils import connect_preprod, pipeline_messenger, constring
-from larger_etab_file_process import etab_file_process
+from etab_clean_func import etab_file_process
 
 cursor, db = connect_preprod()
 

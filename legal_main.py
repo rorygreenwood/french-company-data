@@ -1,5 +1,5 @@
 from download_files import process_download, split_file, unzip_file
-from larger_legal_file_process import legal_file_process
+from legal_clean_func import legal_file_process
 import time
 import datetime
 import os
