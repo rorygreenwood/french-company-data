@@ -12,6 +12,7 @@ format_str = "[%(levelname)s: %(lineno)d] %(message)s"
 logging.basicConfig(level=logging.INFO, format=format_str)
 logger = logging.getLogger(__name__)
 
+
 def map_employee_count(input_dict: dict) -> str:
     """
     sirene provides a code for each number of employees
@@ -48,6 +49,7 @@ def map_employee_count(input_dict: dict) -> str:
     else:
         return 'NA'
 
+
 def create_org_id(input_dict: dict) -> str:
     """
     create an organisation id for matching in organisation
@@ -55,6 +57,7 @@ def create_org_id(input_dict: dict) -> str:
     :return:
     """
     return 'FR' + str(input_dict['company_number'])
+
 
 def map_company_activity(input_dict: dict) -> str:
     """
@@ -67,6 +70,7 @@ def map_company_activity(input_dict: dict) -> str:
     elif input_dict['AdministrativeStatus'] == 'C':
         return 'Inactive'
 
+
 def map_company_type(input_dict: dict) -> str:
     """
     index the first two numbers of the code, and map it to the first two digits of the mapping csv provided by sirene
@@ -76,52 +80,58 @@ def map_company_type(input_dict: dict) -> str:
     """
 
     company_type_map = {
-        '00': 'Collective Investment', # Organisme de placement collectif en valeurs mobilières sans personnalité morale
-        '10': 'Entrepreneur', # Entrepreneur individuel
+        '00': 'Collective Investment',
+        # Organisme de placement collectif en valeurs mobilières sans personnalité morale
+        '10': 'Entrepreneur',  # Entrepreneur individuel
 
-        '21': 'Joint Ownership', # Indivision
-        '22': 'De facto Corporation', # Société créée de fait
-        '23': 'Joint-stock Company', # Societe en participaiton
-        '24': 'Trust', # Fiducie
-        '27': 'Parish', # Paroisse
-        '28': 'Subject to VAT', # Assujettie unique a la TVA
-        '29': 'Private Law Group without legal personality', # Autre groupement de droit privé non doté de la personnalité morale
+        '21': 'Joint Ownership',  # Indivision
+        '22': 'De facto Corporation',  # Société créée de fait
+        '23': 'Joint-stock Company',  # Societe en participaiton
+        '24': 'Trust',  # Fiducie
+        '27': 'Parish',  # Paroisse
+        '28': 'Subject to VAT',  # Assujettie unique a la TVA
+        '29': 'Private Law Group without legal personality',
+        # Autre groupement de droit privé non doté de la personnalité morale
 
-        '31': 'Legal Entity Under Foreign Law, RCS registered', # Personne morale de droit étranger, immatriculée au RCS (registre du commerce et des sociétés)
-        '32': 'Legal Entity Under Foreign Law, not RCS registered', # Personne morale de droit étranger, non immatriculée au RCS
+        '31': 'Legal Entity Under Foreign Law, RCS registered',
+        # Personne morale de droit étranger, immatriculée au RCS (registre du commerce et des sociétés)
+        '32': 'Legal Entity Under Foreign Law, not RCS registered',
+        # Personne morale de droit étranger, non immatriculée au RCS
 
-        '41': 'Public Company of industrial/commercial nature', # Etablissement public ou régie à caractère industriel ou commercial
+        '41': 'Public Company of industrial/commercial nature',
+        # Etablissement public ou régie à caractère industriel ou commercial
 
-        '51': 'Limited Liability Co-operative', # Société coopérative commerciale particulière
-        '52': 'SNC (General Partnership)', # Société en nom collectif (SNC)
-        '53': 'SCA (Limited Partnership)', # Société en commandite (SCA)
-        '54': 'SARL (Limited Liability Company)', # Société à responsabilité limitée (SARL)
-        '55': 'SA (Limited Company with Board of Directors)', # Société anonyme à conseil d'administration (SA)
-        '56': 'SA (Limited Company with Management Board)', # Société anonyme à directoire (SA)
-        '57': 'SAS (Joint-Stock Company)', # Société par actions simplifiée (SAS)
-        '58': 'SE (EU Registered Company)', # Société européenne (SE)
+        '51': 'Limited Liability Co-operative',  # Société coopérative commerciale particulière
+        '52': 'SNC (General Partnership)',  # Société en nom collectif (SNC)
+        '53': 'SCA (Limited Partnership)',  # Société en commandite (SCA)
+        '54': 'SARL (Limited Liability Company)',  # Société à responsabilité limitée (SARL)
+        '55': 'SA (Limited Company with Board of Directors)',  # Société anonyme à conseil d'administration (SA)
+        '56': 'SA (Limited Company with Management Board)',  # Société anonyme à directoire (SA)
+        '57': 'SAS (Joint-Stock Company)',  # Société par actions simplifiée (SAS)
+        '58': 'SE (EU Registered Company)',  # Société européenne (SE)
 
-        '61': 'Pension Funds', # Caisse d'épargne et de prévoyance
-        '62': 'Economic Interest Group', # Groupement d'intérêt économique
-        '63': 'Agricultural Co-operative', # Société coopérative agricole
-        '64': 'Mutual Insurance', # Société d'assurance mutuelle
-        '65': 'SC (Civil Company)', # Société civile
-        '69': 'Other Registered Private Company', # Autre personne morale de droit privé inscrite au registre du commerce et des sociétés
-        '71': 'State Administration', # Administration de l'état
-        '72': 'Territorial Authority', # Collectivité territoriale
-        '73': 'Public Administration', # Etablissement public administratif
-        '74': 'Other Public Entity', # Autre personne morale de droit public administratif
+        '61': 'Pension Funds',  # Caisse d'épargne et de prévoyance
+        '62': 'Economic Interest Group',  # Groupement d'intérêt économique
+        '63': 'Agricultural Co-operative',  # Société coopérative agricole
+        '64': 'Mutual Insurance',  # Société d'assurance mutuelle
+        '65': 'SC (Civil Company)',  # Société civile
+        '69': 'Other Registered Private Company',
+        # Autre personne morale de droit privé inscrite au registre du commerce et des sociétés
+        '71': 'State Administration',  # Administration de l'état
+        '72': 'Territorial Authority',  # Collectivité territoriale
+        '73': 'Public Administration',  # Etablissement public administratif
+        '74': 'Other Public Entity',  # Autre personne morale de droit public administratif
 
-        '81': 'Social Security', # Organisme gérant un régime de protection sociale à adhésion obligatoire
+        '81': 'Social Security',  # Organisme gérant un régime de protection sociale à adhésion obligatoire
 
-        '82': 'Mutual Organisation', # Organisme mutualiste
-        '83': 'Council', # Comité d'entreprise
-        '84': 'Professional Organisation', # Organisme professionnel
-        '85': 'Non-compulsory pension', # Organisme de retraite à adhésion non obligatoire
+        '82': 'Mutual Organisation',  # Organisme mutualiste
+        '83': 'Council',  # Comité d'entreprise
+        '84': 'Professional Organisation',  # Organisme professionnel
+        '85': 'Non-compulsory pension',  # Organisme de retraite à adhésion non obligatoire
 
-        '91': 'Union', # Syndicat de propriétaires
-        '92': '1901 Association', # Association loi 1901 ou assimilé
-        '93': 'Foundation', # Fondation
+        '91': 'Union',  # Syndicat de propriétaires
+        '92': '1901 Association',  # Association loi 1901 ou assimilé
+        '93': 'Foundation',  # Fondation
         '99': 'Other Legal Entity'
     }
 
@@ -150,7 +160,8 @@ def legal_file_process(filename) -> str:
         'pseudonymeUniteLegale': 'pseudonym',  # pseudonym of the natural person
         'identifiantAssociationUniteLegale': 'RNANumber',  #
         'trancheEffectifsUniteLegale': 'EmployeeCountCategory',
-        'anneeEffectifsUniteLegale': 'EmployeeCountCategoryDateUpdated', # year when the employee number was last recorded
+        'anneeEffectifsUniteLegale': 'EmployeeCountCategoryDateUpdated',
+        # year when the employee number was last recorded
         'dateDernierTraitementUniteLegale': 'LegalUnitUpdated',  #
         'nombrePeriodesUniteLegale': 'TimeAsLegalUnit',  #
         'categorieEntreprise': 'BusinessCategory',  # either SME (small-medium enterprise), Medium (ETI) or GE (Large)
@@ -198,25 +209,28 @@ def legal_file_process(filename) -> str:
     logger.debug(f'size of file before filtering category for {filename}: {len(pldf)}')
 
     # filtering only on societe commercial
-    pldf = pldf.filter(pl.col('LegalCategory').str.slice(0,1) ==  '5')
+    pldf = pldf.filter(pl.col('LegalCategory').str.slice(0, 1) == '5')
     logger.debug(f'size of file after filtering category for {filename}: {len(pldf)}')
 
     # map company_type ids
-    pldf = pldf.with_columns(pl.struct(['LegalCategory']).apply(map_company_type, return_dtype=pl.Utf8).alias('company_type'))
+    pldf = pldf.with_columns(
+        pl.struct(['LegalCategory']).apply(map_company_type, return_dtype=pl.Utf8).alias('company_type'))
 
     # writeup company id
     pldf = pldf.with_columns(pl.struct(['company_number']).apply(create_org_id, return_dtype=pl.Utf8).alias('id'))
 
     # add additional columns required from organisation insert
     pldf = pldf.with_columns(country=pl.lit('FRANCE'),
-                      country_code=pl.lit('FR'))
+                             country_code=pl.lit('FR'))
 
     # determine whether or not the company is active or inactive
-    pldf = pldf.with_columns(pl.struct(['AdministrativeStatus']).apply(map_company_activity, return_dtype=pl.Utf8).alias('company_status'))
+    pldf = pldf.with_columns(
+        pl.struct(['AdministrativeStatus']).apply(map_company_activity, return_dtype=pl.Utf8).alias('company_status'))
 
     # map the category provided by siren to their documentation to get a range of numbers for employees, rather than a
     # representative category
-    pldf = pldf.with_columns(pl.struct(['EmployeeCountCategory']).apply(map_employee_count, return_dtype=pl.Utf8).alias('EmployeeCount'))
+    pldf = pldf.with_columns(
+        pl.struct(['EmployeeCountCategory']).apply(map_employee_count, return_dtype=pl.Utf8).alias('EmployeeCount'))
     t1 = time.time()
 
     # for diagnostic purposes, add filenames and update times into the dataframe
@@ -238,6 +252,3 @@ def legal_file_process(filename) -> str:
     os.remove(filename)
 
     return 'StockUniteLegale_clean.csv'
-
-
-
