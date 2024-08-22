@@ -51,6 +51,7 @@ def map_employee_count(input_dict: dict) -> str:
     else:
         return 'NA'
 
+
 def create_org_id(input_dict: dict) -> str:
     """
     create an organisation id for matching in organisation
@@ -58,6 +59,7 @@ def create_org_id(input_dict: dict) -> str:
     :return:
     """
     return 'FR' + str(input_dict['company_number'])
+
 
 def map_company_activity(input_dict: dict) -> str:
     """
@@ -70,6 +72,7 @@ def map_company_activity(input_dict: dict) -> str:
     elif input_dict['AdministrativeStatus'] == 'C':
         return 'Inactive'
 
+
 def map_company_type(input_dict: dict) -> str:
     """
     index the first two numbers of the code, and map it to the first two digits of the mapping csv provided by sirene
@@ -79,56 +82,63 @@ def map_company_type(input_dict: dict) -> str:
     """
 
     company_type_map = {
-        '00': 'Collective Investment', # Organisme de placement collectif en valeurs mobilières sans personnalité morale
-        '10': 'Entrepreneur', # Entrepreneur individuel
+        '00': 'Collective Investment',
+        # Organisme de placement collectif en valeurs mobilières sans personnalité morale
+        '10': 'Entrepreneur',  # Entrepreneur individuel
 
-        '21': 'Joint Ownership', # Indivision
-        '22': 'De facto Corporation', # Société créée de fait
-        '23': 'Joint-stock Company', # Societe en participaiton
-        '24': 'Trust', # Fiducie
-        '27': 'Parish', # Paroisse
-        '28': 'Subject to VAT', # Assujettie unique a la TVA
-        '29': 'Private Law Group without legal personality', # Autre groupement de droit privé non doté de la personnalité morale
+        '21': 'Joint Ownership',  # Indivision
+        '22': 'De facto Corporation',  # Société créée de fait
+        '23': 'Joint-stock Company',  # Societe en participaiton
+        '24': 'Trust',  # Fiducie
+        '27': 'Parish',  # Paroisse
+        '28': 'Subject to VAT',  # Assujettie unique a la TVA
+        '29': 'Private Law Group without legal personality',
+        # Autre groupement de droit privé non doté de la personnalité morale
 
-        '31': 'Legal Entity Under Foreign Law, RCS registered', # Personne morale de droit étranger, immatriculée au RCS (registre du commerce et des sociétés)
-        '32': 'Legal Entity Under Foreign Law, not RCS registered', # Personne morale de droit étranger, non immatriculée au RCS
+        '31': 'Legal Entity Under Foreign Law, RCS registered',
+        # Personne morale de droit étranger, immatriculée au RCS (registre du commerce et des sociétés)
+        '32': 'Legal Entity Under Foreign Law, not RCS registered',
+        # Personne morale de droit étranger, non immatriculée au RCS
 
-        '41': 'Public Company of industrial/commercial nature', # Etablissement public ou régie à caractère industriel ou commercial
+        '41': 'Public Company of industrial/commercial nature',
+        # Etablissement public ou régie à caractère industriel ou commercial
 
-        '51': 'Limited Liability Co-operative', # Société coopérative commerciale particulière
-        '52': 'SNC (General Partnership)', # Société en nom collectif (SNC)
-        '53': 'SCA (Limited Partnership)', # Société en commandite (SCA)
-        '54': 'SARL (Limited Liability Company)', # Société à responsabilité limitée (SARL)
-        '55': 'SA (Limited Company with Board of Directors)', # Société anonyme à conseil d'administration (SA)
-        '56': 'SA (Limited Company with Management Board)', # Société anonyme à directoire (SA)
-        '57': 'SAS (Joint-Stock Company)', # Société par actions simplifiée (SAS)
-        '58': 'SE (EU Registered Company)', # Société européenne (SE)
+        '51': 'Limited Liability Co-operative',  # Société coopérative commerciale particulière
+        '52': 'SNC (General Partnership)',  # Société en nom collectif (SNC)
+        '53': 'SCA (Limited Partnership)',  # Société en commandite (SCA)
+        '54': 'SARL (Limited Liability Company)',  # Société à responsabilité limitée (SARL)
+        '55': 'SA (Limited Company with Board of Directors)',  # Société anonyme à conseil d'administration (SA)
+        '56': 'SA (Limited Company with Management Board)',  # Société anonyme à directoire (SA)
+        '57': 'SAS (Joint-Stock Company)',  # Société par actions simplifiée (SAS)
+        '58': 'SE (EU Registered Company)',  # Société européenne (SE)
 
-        '61': 'Pension Funds', # Caisse d'épargne et de prévoyance
-        '62': 'Economic Interest Group', # Groupement d'intérêt économique
-        '63': 'Agricultural Co-operative', # Société coopérative agricole
-        '64': 'Mutual Insurance', # Société d'assurance mutuelle
-        '65': 'SC (Civil Company)', # Société civile
-        '69': 'Other Registered Private Company', # Autre personne morale de droit privé inscrite au registre du commerce et des sociétés
-        '71': 'State Administration', # Administration de l'état
-        '72': 'Territorial Authority', # Collectivité territoriale
-        '73': 'Public Administration', # Etablissement public administratif
-        '74': 'Other Public Entity', # Autre personne morale de droit public administratif
+        '61': 'Pension Funds',  # Caisse d'épargne et de prévoyance
+        '62': 'Economic Interest Group',  # Groupement d'intérêt économique
+        '63': 'Agricultural Co-operative',  # Société coopérative agricole
+        '64': 'Mutual Insurance',  # Société d'assurance mutuelle
+        '65': 'SC (Civil Company)',  # Société civile
+        '69': 'Other Registered Private Company',
+        # Autre personne morale de droit privé inscrite au registre du commerce et des sociétés
+        '71': 'State Administration',  # Administration de l'état
+        '72': 'Territorial Authority',  # Collectivité territoriale
+        '73': 'Public Administration',  # Etablissement public administratif
+        '74': 'Other Public Entity',  # Autre personne morale de droit public administratif
 
-        '81': 'Social Security', # Organisme gérant un régime de protection sociale à adhésion obligatoire
+        '81': 'Social Security',  # Organisme gérant un régime de protection sociale à adhésion obligatoire
 
-        '82': 'Mutual Organisation', # Organisme mutualiste
-        '83': 'Council', # Comité d'entreprise
-        '84': 'Professional Organisation', # Organisme professionnel
-        '85': 'Non-compulsory pension', # Organisme de retraite à adhésion non obligatoire
+        '82': 'Mutual Organisation',  # Organisme mutualiste
+        '83': 'Council',  # Comité d'entreprise
+        '84': 'Professional Organisation',  # Organisme professionnel
+        '85': 'Non-compulsory pension',  # Organisme de retraite à adhésion non obligatoire
 
-        '91': 'Union', # Syndicat de propriétaires
-        '92': '1901 Association', # Association loi 1901 ou assimilé
-        '93': 'Foundation', # Fondation
+        '91': 'Union',  # Syndicat de propriétaires
+        '92': '1901 Association',  # Association loi 1901 ou assimilé
+        '93': 'Foundation',  # Fondation
         '99': 'Other Legal Entity'
     }
 
     return company_type_map[input_dict['LegalCategory'][0:2]]
+
 
 def process_legal_fragment(filename: str) -> None:
     """
@@ -139,10 +149,10 @@ def process_legal_fragment(filename: str) -> None:
     """
 
     pldf = pl.read_csv(filename, dtypes={
-                                         'company_number': pl.Utf8,
-                                         'siret': pl.Utf8,
-                                         'LegalCategory': pl.Utf8,
-                                         'EmployeeCountCategory': pl.Utf8})
+        'company_number': pl.Utf8,
+        'siret': pl.Utf8,
+        'LegalCategory': pl.Utf8,
+        'EmployeeCountCategory': pl.Utf8})
     # sending polars dataframe to staging table
     t0 = time.time()
     pldf.write_database(table_name='sirene_stocklegal_staging',
@@ -209,56 +219,139 @@ def process_legal_fragment(filename: str) -> None:
 
     # upsert staging table into main stock_legal table
     t0 = time.time()
-    cursor.execute(
-        """
+    cursor.execute("""
         insert into sirene_stocklegal
-        select * from sirene_stocklegal_staging t2
+            (company_number, 
+            LegalUnitBroadcastID, 
+            PurgeStatus, 
+            DateCreated, 
+            LegalAcronym, 
+            GenderOfPerson, 
+            NaturalName1, 
+            NaturalName2, 
+            NaturalName3, 
+            NaturalName4, 
+            PreferredName, 
+            pseudonym, 
+            RNANumber, 
+            EmployeeCountCategory, 
+            EmployeeCountCategoryDateUpdated, 
+            LegalUnitUpdated, 
+            TimeAsLegalUnit, 
+            BusinessCategory, 
+            YearOfBusinessCategoryAssignment, 
+            DateOfBusinessStart, 
+            AdministrativeStatus, 
+            PersonBirthName, 
+            PersonUsedName, 
+            LegalEntityName, 
+            LegalEntityName1, 
+            LegalEntityName2, 
+            LegalEntityName3, 
+            LegalCategory, 
+            NAFCategory, 
+            ActiveLegalUnit, 
+            NICAssignment, 
+            SSEBool, 
+            MissionDrivenCompanyBool, 
+            EmployerNature, 
+            id, 
+            country, 
+            country_code, 
+            last_modified_by, 
+            EmployeeCount, 
+            company_type, 
+            company_status, 
+            last_modified_date) 
+        select 
+            company_number, 
+            LegalUnitBroadcastID, 
+            PurgeStatus, 
+            DateCreated, 
+            LegalAcronym, 
+            GenderOfPerson, 
+            NaturalName1, 
+            NaturalName2, 
+            NaturalName3, 
+            NaturalName4, 
+            PreferredName, 
+            pseudonym, 
+            RNANumber, 
+            EmployeeCountCategory, 
+            EmployeeCountCategoryDateUpdated, 
+            LegalUnitUpdated, 
+            TimeAsLegalUnit, 
+            BusinessCategory, 
+            YearOfBusinessCategoryAssignment, 
+            DateOfBusinessStart, 
+            AdministrativeStatus, 
+            PersonBirthName, 
+            PersonUsedName, 
+            LegalEntityName, 
+            LegalEntityName1, 
+            LegalEntityName2, 
+            LegalEntityName3, 
+            LegalCategory, 
+            NAFCategory, 
+            ActiveLegalUnit, 
+            NICAssignment, 
+            SSEBool, 
+            MissionDrivenCompanyBool, 
+            EmployerNature, 
+            company_type, 
+            id, 
+            country, 
+            country_code, 
+            company_status, 
+            EmployeeCount, 
+            last_modified_by, 
+            last_modified_date 
+        from sirene_stocklegal_staging t2
         on duplicate key update 
-    sirene_stocklegal.company_number = t2.company_number,
-    sirene_stocklegal.LegalUnitBroadcastID = t2.LegalUnitBroadcastID,
-    sirene_stocklegal.PurgeStatus = t2.PurgeStatus,
-    sirene_stocklegal.DateCreated = t2.DateCreated,
-    sirene_stocklegal.LegalAcronym = t2.LegalAcronym,
-    sirene_stocklegal.GenderOfPerson = t2.GenderOfPerson,
-    sirene_stocklegal.NaturalName1 = t2.NaturalName1,
-    sirene_stocklegal.NaturalName2 = t2.NaturalName2,
-    sirene_stocklegal.NaturalName3 = t2.NaturalName3,
-    sirene_stocklegal.NaturalName4 = t2.NaturalName4,
-    sirene_stocklegal.PreferredName = t2.PreferredName,
-    sirene_stocklegal.pseudonym = t2.pseudonym,
-    sirene_stocklegal.RNANumber = t2.RNANumber,
-    sirene_stocklegal.EmployeeCountCategory = t2.EmployeeCountCategory,
-    sirene_stocklegal.EmployeeCountCategoryDateUpdated = t2.EmployeeCountCategoryDateUpdated,
-    sirene_stocklegal.LegalUnitUpdated = t2.LegalUnitUpdated,
-    sirene_stocklegal.TimeAsLegalUnit = t2.TimeAsLegalUnit,
-    sirene_stocklegal.BusinessCategory = t2.BusinessCategory,
-    sirene_stocklegal.YearOfBusinessCategoryAssignment = t2.YearOfBusinessCategoryAssignment,
-    sirene_stocklegal.DateOfBusinessStart = t2.DateOfBusinessStart,
-    sirene_stocklegal.AdministrativeStatus = t2.AdministrativeStatus,
-    sirene_stocklegal.PersonBirthName = t2.PersonBirthName,
-    sirene_stocklegal.PersonUsedName = t2.PersonUsedName,
-    sirene_stocklegal.LegalEntityName = t2.LegalEntityName,
-    sirene_stocklegal.LegalEntityName1 = t2.LegalEntityName1,
-    sirene_stocklegal.LegalEntityName2 = t2.LegalEntityName2,
-    sirene_stocklegal.LegalEntityName3 = t2.LegalEntityName3,
-    sirene_stocklegal.LegalCategory = t2.LegalCategory,
-    sirene_stocklegal.NAFCategory = t2.NAFCategory,
-    sirene_stocklegal.ActiveLegalUnit = t2.ActiveLegalUnit,
-    sirene_stocklegal.NICAssignment = t2.NICAssignment,
-    sirene_stocklegal.SSEBool = t2.SSEBool,
-    sirene_stocklegal.MissionDrivenCompanyBool = t2.MissionDrivenCompanyBool,
-    sirene_stocklegal.EmployerNature = t2.EmployerNature,
-    sirene_stocklegal.country = t2.country,
-    sirene_stocklegal.country_code = t2.country_code,
-    sirene_stocklegal.last_modified_by = t2.last_modified_by,
-    sirene_stocklegal.last_modified_date = t2.last_modified_date
-        """
-    )
+            sirene_stocklegal.company_number = t2.company_number,
+            sirene_stocklegal.LegalUnitBroadcastID = t2.LegalUnitBroadcastID,
+            sirene_stocklegal.PurgeStatus = t2.PurgeStatus,
+            sirene_stocklegal.DateCreated = t2.DateCreated,
+            sirene_stocklegal.LegalAcronym = t2.LegalAcronym,
+            sirene_stocklegal.GenderOfPerson = t2.GenderOfPerson,
+            sirene_stocklegal.NaturalName1 = t2.NaturalName1,
+            sirene_stocklegal.NaturalName2 = t2.NaturalName2,
+            sirene_stocklegal.NaturalName3 = t2.NaturalName3,
+            sirene_stocklegal.NaturalName4 = t2.NaturalName4,
+            sirene_stocklegal.PreferredName = t2.PreferredName,
+            sirene_stocklegal.pseudonym = t2.pseudonym,
+            sirene_stocklegal.RNANumber = t2.RNANumber,
+            sirene_stocklegal.EmployeeCountCategory = t2.EmployeeCountCategory,
+            sirene_stocklegal.EmployeeCountCategoryDateUpdated = t2.EmployeeCountCategoryDateUpdated,
+            sirene_stocklegal.LegalUnitUpdated = t2.LegalUnitUpdated,
+            sirene_stocklegal.TimeAsLegalUnit = t2.TimeAsLegalUnit,
+            sirene_stocklegal.BusinessCategory = t2.BusinessCategory,
+            sirene_stocklegal.YearOfBusinessCategoryAssignment = t2.YearOfBusinessCategoryAssignment,
+            sirene_stocklegal.DateOfBusinessStart = t2.DateOfBusinessStart,
+            sirene_stocklegal.AdministrativeStatus = t2.AdministrativeStatus,
+            sirene_stocklegal.PersonBirthName = t2.PersonBirthName,
+            sirene_stocklegal.PersonUsedName = t2.PersonUsedName,
+            sirene_stocklegal.LegalEntityName = t2.LegalEntityName,
+            sirene_stocklegal.LegalEntityName1 = t2.LegalEntityName1,
+            sirene_stocklegal.LegalEntityName2 = t2.LegalEntityName2,
+            sirene_stocklegal.LegalEntityName3 = t2.LegalEntityName3,
+            sirene_stocklegal.LegalCategory = t2.LegalCategory,
+            sirene_stocklegal.NAFCategory = t2.NAFCategory,
+            sirene_stocklegal.ActiveLegalUnit = t2.ActiveLegalUnit,
+            sirene_stocklegal.NICAssignment = t2.NICAssignment,
+            sirene_stocklegal.SSEBool = t2.SSEBool,
+            sirene_stocklegal.MissionDrivenCompanyBool = t2.MissionDrivenCompanyBool,
+            sirene_stocklegal.EmployerNature = t2.EmployerNature,
+            sirene_stocklegal.country = t2.country,
+            sirene_stocklegal.country_code = t2.country_code,
+            sirene_stocklegal.last_modified_by = t2.last_modified_by,
+            sirene_stocklegal.last_modified_date = t2.last_modified_date""")
     db.commit()
     cursor.execute("""truncate table sirene_stocklegal_staging""")
     db.commit()
     t1 = time.time()
-    logger.info('time taken to upsert into live tables: {}'.format(round(t1-t0)))
+    logger.info('time taken to upsert into live tables: {}'.format(round(t1 - t0)))
+
 
 def run_legal():
     # in the future, this will be the curdate month
@@ -271,14 +364,17 @@ def run_legal():
     if filestring not in os.listdir():
         t0 = time.time()
         # download file
-        # zipped_file = '2024-08-01-StockUniteLegale_utf8.zip'
         zipped_file = process_download(filestring=filestring)
+
         # unzip file
         unzipped_file = unzip_file(filestring=zipped_file)
+
         # process unzipped file
         processed_file = legal_file_process(filename=unzipped_file)
+
         # split processed file
         split_file(processed_file)
+
         t1 = time.time()
         download_time = round(t1 - t0)
         logger.info(f'download and processing time: {download_time}')
@@ -305,9 +401,8 @@ def run_legal():
         t1 = time.time()
         time_taken = t1 - t0
         logger.info('total time for processing: {}'.format(time_taken))
-        avg_time_taken = round(sum(fragment_times) / (len(fragment_times)-1), 2)
+        avg_time_taken = round(sum(fragment_times) / (len(fragment_times) - 1), 2)
         logger.info('average fragment processing time: {}'.format(avg_time_taken))
-
 
         pipeline_messenger(
             title='Sirene Stock Unite Legale Pipeline has run',
@@ -317,9 +412,10 @@ def run_legal():
     except Exception as e:
         pipeline_messenger(
             title='Sirene Stock Unite Legale Pipeline has failed',
-            text= f'Error in file: {filestring} - {e}',
+            text=f'Error in file: {filestring} - {e}',
             notification_type='fail'
         )
+
 
 if __name__ == '__main__':
     run_legal()

@@ -57,6 +57,7 @@ def assign_office_type(input_dict: dict) -> str:
     elif not input_dict['RegisteredOfficeBool']:
         return 'SUB_OFFICE'
 
+
 def create_org_id(input_dict: dict) -> str:
     """
     develop organisation id
@@ -68,6 +69,7 @@ def create_org_id(input_dict: dict) -> str:
     else:
         logger.error(f'Company number {input_dict["company_number"]} not valid')
         quit()
+
 
 def generate_geo_md5(input_dict: dict) -> str:
     """

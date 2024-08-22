@@ -9,13 +9,9 @@ from utils import connect_preprod, return_file_date
 
 cursor, db = connect_preprod()
 
-
 format_str = "[%(levelname)s: %(lineno)d] %(message)s"
 logging.basicConfig(level=logging.INFO, format=format_str)
 logger = logging.getLogger(__name__)
-
-
-
 
 
 def process_download(filestring: str) -> str:
@@ -56,6 +52,8 @@ def process_download(filestring: str) -> str:
 
             logger.info('file successfully downloaded')
     return filestring
+
+
 def unzip_file(filestring: str) -> str:
     # unzip the file and delete the zip file
     with zipfile.ZipFile(filestring, 'r') as zip_ref:
@@ -73,6 +71,7 @@ def unzip_file(filestring: str) -> str:
 
     return unzipped_file_name
 
+
 def split_file(unzipped_file_name: str) -> None:
     # we use filesplit.split Split to divide the file into
     # smaller batches of 50,000 lines
@@ -82,5 +81,3 @@ def split_file(unzipped_file_name: str) -> None:
 
     # once this is done, we can delete the unzipped csv
     os.remove(unzipped_file_name)
-
-
