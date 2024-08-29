@@ -214,10 +214,10 @@ def legal_file_process(filename) -> str:
 
     # map company_type ids
     pldf = pldf.with_columns(
-        pl.struct(['LegalCategory']).apply(map_company_type, return_dtype=pl.Utf8).alias('company_type'))
+        pl.struct(['LegalCategory']).map_elements(map_company_type, return_dtype=pl.Utf8).alias('company_type'))
 
     # writeup company id
-    pldf = pldf.with_columns(pl.struct(['company_number']).apply(create_org_id, return_dtype=pl.Utf8).alias('id'))
+    pldf = pldf.with_columns(pl.struct(['company_number']).map_elements(create_org_id, return_dtype=pl.Utf8).alias('id'))
 
     # add additional columns required from organisation insert
     pldf = pldf.with_columns(country=pl.lit('FRANCE'),
@@ -225,12 +225,12 @@ def legal_file_process(filename) -> str:
 
     # determine whether or not the company is active or inactive
     pldf = pldf.with_columns(
-        pl.struct(['AdministrativeStatus']).apply(map_company_activity, return_dtype=pl.Utf8).alias('company_status'))
+        pl.struct(['AdministrativeStatus']).map_elements(map_company_activity, return_dtype=pl.Utf8).alias('company_status'))
 
     # map the category provided by siren to their documentation to get a range of numbers for employees, rather than a
     # representative category
     pldf = pldf.with_columns(
-        pl.struct(['EmployeeCountCategory']).apply(map_employee_count, return_dtype=pl.Utf8).alias('EmployeeCount'))
+        pl.struct(['EmployeeCountCategory']).map_elements(map_employee_count, return_dtype=pl.Utf8).alias('EmployeeCount'))
     t1 = time.time()
 
     # for diagnostic purposes, add filenames and update times into the dataframe

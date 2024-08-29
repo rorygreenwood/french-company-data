@@ -12,7 +12,6 @@ jobs:
   steps:
     - script: |
         echo $(AWS_ACCESS_KEY_ID)
-        echo $(AWS_SECRET_ACCESS_KEY)
       displayName: Printing Credentials
 - job: ConfigureAWSCredentials
   steps:
@@ -41,7 +40,15 @@ jobs:
         repository: $(imageNameFrenchDataTransfer)
         command: 'build'
         Dockerfile: './Dockerfile'
-        arguments: --build-arg AWS_ACCESS_KEY_ID_ARG=$(AWS_ACCESS_KEY_ID) --build-arg AWS_SECRET_ACCESS_KEY_ARG=$(AWS_SECRET_ACCESS_KEY) --build-arg AWS_REGION_ARG=$(AWS_REGION)
+        arguments: |
+          --build-arg AWS_ACCESS_KEY_ID_ARG=$(AWS_ACCESS_KEY_ID) 
+          --build-arg AWS_SECRET_ACCESS_KEY_ARG=$(AWS_SECRET_ACCESS_KEY) 
+          --build-arg AWS_REGION_ARG=$(AWS_REGION)
+          
+          --build-arg PREPROD_HOST=$(PREPROD_HOST)
+          --build-arg PREPROD_ADMIN_USER=$(PREPROD_ADMIN_USER)
+          --build-arg PREPROD_ADMIN_PASS=$(PREPROD_ADMIN_PASS)
+          --build-arg PREPROD_DATABASE=$(PREPROD_DATABASE)
         buildContext: .
         tags: |
           latest

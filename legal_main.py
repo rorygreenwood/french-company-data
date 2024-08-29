@@ -3,6 +3,8 @@ from legal_clean_func import legal_file_process
 import time
 import datetime
 import os
+import sys
+import traceback
 
 import polars as pl
 import logging
@@ -148,15 +150,16 @@ def process_legal_fragment(filename: str) -> None:
     :return:
     """
 
-    pldf = pl.read_csv(filename, dtypes={
+    pldf = pl.read_csv(filename, schema_overrides={
         'company_number': pl.Utf8,
         'siret': pl.Utf8,
         'LegalCategory': pl.Utf8,
         'EmployeeCountCategory': pl.Utf8})
+    
     # sending polars dataframe to staging table
     t0 = time.time()
     pldf.write_database(table_name='sirene_stocklegal_staging',
-                        connection_uri=constring, if_exists='replace',
+                        connection=constring, if_table_exists='replace',
                         )
     t1 = time.time()
 
@@ -298,13 +301,13 @@ def process_legal_fragment(filename: str) -> None:
             SSEBool, 
             MissionDrivenCompanyBool, 
             EmployerNature, 
-            company_type, 
             id, 
             country, 
             country_code, 
-            company_status, 
-            EmployeeCount, 
             last_modified_by, 
+            EmployeeCount, 
+            company_type, 
+            company_status, 
             last_modified_date 
         from sirene_stocklegal_staging t2
         on duplicate key update 
@@ -361,30 +364,33 @@ def run_legal():
     logger.info(f'sending request with filestring: {filestring}')
 
     # check if zipfile is not already in the dir
-    if filestring not in os.listdir():
-        t0 = time.time()
-        # download file
-        zipped_file = process_download(filestring=filestring)
-
-        # unzip file
-        unzipped_file = unzip_file(filestring=zipped_file)
-
-        # process unzipped file
-        processed_file = legal_file_process(filename=unzipped_file)
-
-        # split processed file
-        split_file(processed_file)
-
-        t1 = time.time()
-        download_time = round(t1 - t0)
-        logger.info(f'download and processing time: {download_time}')
-    else:
-        logger.info('file already downloaded')
-
-    # process_download leaves the section fragments to be processed
-    list_of_fragments = os.listdir('fragments')
-    frag_count = 1
+    print(os.listdir('fragments') == 0)
     try:
+        if len(os.listdir('fragments')) == 0 or (filestring not in os.listdir() or 'StockUniteLegale_clean.csv' not in os.listdir()):
+            t0 = time.time()
+
+            # download file
+            zipped_file = process_download(filestring=filestring)
+
+            # unzip file
+            unzipped_file = unzip_file(filestring=zipped_file)
+
+            # process unzipped file
+            processed_file = legal_file_process(filename=unzipped_file)
+
+            # split processed file
+            split_file(processed_file)
+
+            t1 = time.time()
+            download_time = round(t1 - t0)
+            logger.info(f'download and processing time: {download_time}')
+        else:
+            logger.info('file already downloaded')
+
+        # process_download leaves the section fragments to be processed
+        list_of_fragments = os.listdir('fragments')
+        frag_count = 1
+        # try:
         t0 = time.time()
         fragment_times = []
         logger.debug('processing fragments')
@@ -409,10 +415,12 @@ def run_legal():
             text=f'time taken: {time_taken}\n average time per fragment: {avg_time_taken}',
             notification_type='pass'
         )
-    except Exception as e:
+    except Exception:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        traceback_str = traceback.format_exception(exc_type, exc_value, exc_traceback)
         pipeline_messenger(
-            title='Sirene Stock Unite Legale Pipeline has failed',
-            text=f'Error in file: {filestring} - {e}',
+            title='Sirene Data Transfer (Etab) Notification',
+            text=str(traceback_str),
             notification_type='fail'
         )
 

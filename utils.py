@@ -12,6 +12,8 @@ import zipfile
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
+
+
 def connect_preprod():
     db = mysql.connector.connect(
         host=os.environ.get('preprod_host'),
@@ -23,12 +25,12 @@ def connect_preprod():
     cursor = db.cursor()
     return cursor, db
 
+
 # required for polars
 constring = f'mysql://{os.environ.get("preprod_admin_user")}:{os.environ.get("preprod_admin_pass")}@{os.environ.get("preprod_host")}:3306/{os.environ.get("preprod_database")}'
 
+
 def pipeline_messenger(title, text, notification_type):
-
-
     messenger_colours = {
         'pass': '#00c400',
         'fail': '#c40000',
@@ -62,7 +64,7 @@ def create_s3_connection() -> boto3.client:
     return s3client
 
 
-def download_file(client: boto3, filename: str, target_bucket: str, local_folder: str='') -> None:
+def download_file(client: boto3, filename: str, target_bucket: str, local_folder: str = '') -> None:
     """
     download a filename from a target_bucket into a local folder+filename
     :param local_folder:
@@ -105,6 +107,7 @@ def upload_file(client: boto3.client, filename: str, target_bucket: str) -> None
     t1 = time.time()
     logger.info(f'upload took {round(t1 - t0)} seconds, check {target_bucket} for {target_file_name}')
 
+
 def return_file_date() -> str:
     """
     get the date for a file, where the day is the 1st.
@@ -115,7 +118,7 @@ def return_file_date() -> str:
     year = now.year
     return f'{year}-{month}-01'
 
-filename = '2024-07-01-StockUniteLegale_utf8.zip'
+
 def unzip_file(filename: str) -> str:
     with zipfile.ZipFile(filename, 'r') as zip_ref:
         zip_ref.extractall()
@@ -124,5 +127,3 @@ def unzip_file(filename: str) -> str:
             output = infolist[0].filename
         zip_ref.close()
     return output
-if __name__ == '__main__':
-    upload_file(s3_conn, filename, 'iqblade-data-services-sirene-incoming-files')
