@@ -2,9 +2,9 @@ trigger:
 - master
 variables:
 - group: preprod-connection-group
-- group: aws-access-credentials-data-services
+- group: aws-credentials-original-tenant-data-services-access
 - name: imageNameFrenchDataTransfer
-  value: 'sirene-pipeline-container'
+  value: 'french-data-transfer-container'
 pool:
   vmImage: 'ubuntu-latest'
 jobs:
