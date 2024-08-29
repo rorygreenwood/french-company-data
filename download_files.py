@@ -68,15 +68,16 @@ def unzip_file(filestring: str) -> str:
 
     # remove zip file here
     os.remove(filestring)
-
     return unzipped_file_name
 
 
 def split_file(unzipped_file_name: str) -> None:
-    # we use filesplit.split Split to divide the file into
-    # smaller batches of 50,000 lines
+    """we use filesplit.split Split to divide the file into
+    smaller batches of 50,000 lines"""
     split = Split(unzipped_file_name, 'fragments')
     split.bylinecount(linecount=50000, includeheader=True)
+
+    # remove the manifest file
     os.remove('fragments/manifest')
 
     # once this is done, we can delete the unzipped csv
