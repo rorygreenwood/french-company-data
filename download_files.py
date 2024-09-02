@@ -5,7 +5,7 @@ import zipfile
 import requests
 from filesplit.split import Split
 
-from utils import connect_preprod, return_file_date
+from utils import connect_preprod
 
 cursor, db = connect_preprod()
 

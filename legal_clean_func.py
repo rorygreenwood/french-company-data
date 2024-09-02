@@ -138,7 +138,7 @@ def map_company_type(input_dict: dict) -> str:
     return company_type_map[input_dict['LegalCategory'][0:2]]
 
 
-def legal_file_process(filename) -> str:
+def legal_file_process(filename: str = 'StockUniteLegale_utf8.csv') -> str:
     """
     This function is used to process the UniteLegale .csv file as a whole before splitting it
     :param filename:

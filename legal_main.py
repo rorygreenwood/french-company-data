@@ -155,7 +155,7 @@ def process_legal_fragment(filename: str) -> None:
         'siret': pl.Utf8,
         'LegalCategory': pl.Utf8,
         'EmployeeCountCategory': pl.Utf8})
-    
+
     # sending polars dataframe to staging table
     t0 = time.time()
     pldf.write_database(table_name='sirene_stocklegal_staging',
@@ -209,9 +209,12 @@ def process_legal_fragment(filename: str) -> None:
         
         select  NAFCategory, id, t2.name_en, t2.name_fr, last_modified_date, last_modified_by
         from sirene_stocklegal_staging t1
+        
         inner join naf_codes_translations t2
         on t1.NAFCategory = t2.code
-        
+        where 
+        t1.AdministrativeStatus = 'A'
+        and t1.ActiveLegalUnit = 'NAFRev2'
         on duplicate key update last_modified_date = curdate(), last_modified_by = 'stock legal pipeline update'
         """
     )
@@ -357,58 +360,73 @@ def process_legal_fragment(filename: str) -> None:
 
 
 def run_legal():
-    # in the future, this will be the curdate month
-    current_date_month = datetime.datetime.now().month
-    current_date_year = datetime.datetime.now().year
-    filestring = f'{current_date_year}-{current_date_month:02d}-01-StockUniteLegale_utf8.zip'
-    logger.info(f'sending request with filestring: {filestring}')
+    global download_latest_file
+    global unzip_latest_file
+    global clean_unzipped_file
+    global split_clean_file
+    global process_fragments
 
-    # check if zipfile is not already in the dir
-    print(os.listdir('fragments') == 0)
     try:
-        if len(os.listdir('fragments')) == 0 or (filestring not in os.listdir() or 'StockUniteLegale_clean.csv' not in os.listdir()):
-            t0 = time.time()
+        # in the future, this will be the curdate month
+        current_date_month = datetime.datetime.now().month
+        current_date_year = datetime.datetime.now().year
+        filestring = f'{current_date_year}-{current_date_month:02d}-01-StockUniteLegale_utf8.zip'
+        logger.info(f'sending request with filestring: {filestring}')
 
-            # download file
+        # check if zipfile is not already in the dir
+        print(os.listdir('fragments') == 0)
+        t0 = time.time()
+
+        # download file
+        if download_latest_file:
             zipped_file = process_download(filestring=filestring)
+        else:
+            zipped_file = filestring
 
-            # unzip file
+        # unzip file
+        if unzip_latest_file:
             unzipped_file = unzip_file(filestring=zipped_file)
+        else:
+            unzipped_file = 'StockUniteLegale_utf8.csv'
 
-            # process unzipped file
+        # process unzipped file
+        if clean_unzipped_file:
             processed_file = legal_file_process(filename=unzipped_file)
+        else:
+            processed_file = 'StockUniteLegale_clean.csv'
 
-            # split processed file
+        # split processed file
+        if split_clean_file:
             split_file(processed_file)
 
-            t1 = time.time()
-            download_time = round(t1 - t0)
-            logger.info(f'download and processing time: {download_time}')
-        else:
-            logger.info('file already downloaded')
+        t1 = time.time()
+        download_time = round(t1 - t0)
+        logger.info(f'download and processing time: {download_time}')
 
         # process_download leaves the section fragments to be processed
-        list_of_fragments = os.listdir('fragments')
-        frag_count = 1
-        # try:
-        t0 = time.time()
-        fragment_times = []
-        logger.debug('processing fragments')
-        for fragment in list_of_fragments:
-            logger.info(fragment)
-            if 'Legal' in filestring and 'Legal' in fragment:
-                f_t0 = time.time()
-                process_legal_fragment(filename='fragments/' + fragment)
-                os.remove('fragments/' + fragment)
-                frag_count += 1
-                f_t1 = time.time()
-                fragment_time_taken = round(f_t1 - f_t0)
-                fragment_times.append(fragment_time_taken)
+        if process_fragments:
+            list_of_fragments = os.listdir('fragments')
+            frag_count = 1
+            t0 = time.time()
+            fragment_times = []
+            logger.debug('processing fragments')
+            for fragment in list_of_fragments:
+                logger.info(fragment)
+                if 'Legal' in filestring and 'Legal' in fragment:
+                    f_t0 = time.time()
+                    process_legal_fragment(filename='fragments/' + fragment)
+                    os.remove('fragments/' + fragment)
+                    frag_count += 1
+                    f_t1 = time.time()
+                    fragment_time_taken = round(f_t1 - f_t0)
+                    fragment_times.append(fragment_time_taken)
+            avg_time_taken = round(sum(fragment_times) / (len(fragment_times) - 1), 2)
+            logger.info('average fragment processing time: {}'.format(avg_time_taken))
+        else:
+            avg_time_taken = 'NA'
         t1 = time.time()
         time_taken = t1 - t0
         logger.info('total time for processing: {}'.format(time_taken))
-        avg_time_taken = round(sum(fragment_times) / (len(fragment_times) - 1), 2)
-        logger.info('average fragment processing time: {}'.format(avg_time_taken))
 
         pipeline_messenger(
             title='Sirene Stock Unite Legale Pipeline has run',
@@ -416,6 +434,7 @@ def run_legal():
             notification_type='pass'
         )
     except Exception:
+        global live_service
         exc_type, exc_value, exc_traceback = sys.exc_info()
         traceback_str = traceback.format_exception(exc_type, exc_value, exc_traceback)
         pipeline_messenger(
@@ -423,7 +442,37 @@ def run_legal():
             text=str(traceback_str),
             notification_type='fail'
         )
+        # ensure files are cleaned up before exiting if a live service
+        if live_service:
+            # check for each potentially produced file and remove it
+            if 'StockUniteLegale_clean.csv' in os.listdir():
+                os.remove('StockUniteLegale_clean.csv')
+            if 'StockUniteLegale_utf8.csv' in os.listdir():
+                os.remove('StockUniteLegale_utf8.csv')
+            if 'StockUniteLegale_utf8.zip' in os.listdir():
+                os.remove('StockUniteLegale_utf8.zip')
+            for file in os.listdir('fragments'):
+                if '.csv' in file:
+                    os.remove(os.path.join('fragments', file))
 
 
 if __name__ == '__main__':
+    # bool to determine whether or not the service needs clearing after it runs/errors
+    live_service = False
+
+    # bool to determine whether or not to download the latest file
+    download_latest_file = True
+
+    # bool to determine whether or not to unzip the latest file
+    unzip_latest_file = True
+
+    # bool to determine whether or not to clean the unzipped csv
+    clean_unzipped_file = True
+
+    # bool to determine whether or not to fragment the cleaned csv file
+    split_clean_file = True
+
+    # bool to process fragments
+    process_fragments = True
+
     run_legal()

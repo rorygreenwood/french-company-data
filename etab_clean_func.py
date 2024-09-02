@@ -165,7 +165,7 @@ def etab_file_process(filename: str) -> str:
     pldf = pldf.rename(unite_etab_cols)
     pldf = pldf.fill_null('')
     pldf = pldf.fill_nan('')
-    pldf = pldf.with_columns(pl.struct(['company_number']).apply(create_org_id, return_dtype=pl.Utf8).alias('id'))
+    pldf = pldf.with_columns(pl.struct(['company_number']).map_elements(create_org_id, return_dtype=pl.Utf8).alias('id'))
 
     # get original size for analytics
     original_pldf_size = len(pldf)
@@ -177,23 +177,23 @@ def etab_file_process(filename: str) -> str:
 
     # generate md5 hash
     pldf = pldf.with_columns(
-        pl.struct(['id', 'AddressPostcode']).apply(generate_geo_md5, return_dtype=pl.Utf8).alias('geo_md5'))
+        pl.struct(['id', 'AddressPostcode']).map_elements(generate_geo_md5, return_dtype=pl.Utf8).alias('geo_md5'))
 
     # create first line of address
     # todo exceptions.ComputeError: TypeError: sequence item 0: expected str instance, NoneType found
 
     pldf = pldf.with_columns(
-        pl.struct(['AddressBuildingBlock', 'AddressNumber', 'AddressNumberSubUnit']).apply(create_address_line_1).alias(
+        pl.struct(['AddressBuildingBlock', 'AddressNumber', 'AddressNumberSubUnit']).map_elements(create_address_line_1, return_dtype=pl.Utf8).alias(
             'address_line_1'))
 
     # create second line of address
     pldf = pldf.with_columns(pl.struct(
-        ['AddressUniqueIdentifier', 'AddressLabel']).apply(
-        create_address_line_2).alias('address_line_2'))
+        ['AddressUniqueIdentifier', 'AddressLabel']).map_elements(
+        create_address_line_2, return_dtype=pl.Utf8).alias('address_line_2'))
 
     # determine whether the office is a head office or no
     pldf = pldf.with_columns(
-        pl.struct(['RegisteredOfficeBool']).apply(assign_office_type).alias('registered_office_type'))
+        pl.struct(['RegisteredOfficeBool']).map_elements(assign_office_type, return_dtype=pl.Utf8).alias('registered_office_type'))
 
     t1 = time.time()
 
