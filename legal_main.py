@@ -455,10 +455,10 @@ def main_legal():
 live_service = False
 
 # bool to determine whether or not to download the latest file
-download_latest_file = False
+download_latest_file = True
 
 # bool to determine whether or not to unzip the latest file
-unzip_latest_file = False
+unzip_latest_file = True
 
 # bool to determine whether or not to clean the unzipped csv
 clean_unzipped_file = True
