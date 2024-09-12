@@ -3,6 +3,8 @@ import hashlib
 import logging
 import os
 import time
+import sys
+import traceback
 
 import polars as pl
 
@@ -160,22 +162,22 @@ def process_etab_fragment(filename: str) -> None:
         'caractereEmployeurEtablissement': 'EmploymentType',  #
     }
 
-    pldf = pl.read_csv(filename, dtypes={'AddressCommuneCode': pl.Utf8,
-                                         'AddressCommuneCode2': pl.Utf8,
-                                         'AddressCEDEXCode': pl.Utf8,
-                                         'AddressCedexCode2': pl.Utf8,
-                                         'AddressNumber': pl.Utf8,
-                                         'AddressNumber2': pl.Utf8,
-                                         'AddressPostcode': pl.Utf8,
-                                         'AddressPostcode2': pl.Utf8,
-                                         'AddressPOBox': pl.Utf8,
-                                         'AddressBuildingBlock': pl.Utf8,
-                                         'siren': pl.Utf8}, ignore_errors=True,
+    pldf = pl.read_csv(filename, schema_overrides={'AddressCommuneCode': pl.Utf8,
+                                                   'AddressCommuneCode2': pl.Utf8,
+                                                   'AddressCEDEXCode': pl.Utf8,
+                                                   'AddressCedexCode2': pl.Utf8,
+                                                   'AddressNumber': pl.Utf8,
+                                                   'AddressNumber2': pl.Utf8,
+                                                   'AddressPostcode': pl.Utf8,
+                                                   'AddressPostcode2': pl.Utf8,
+                                                   'AddressPOBox': pl.Utf8,
+                                                   'AddressBuildingBlock': pl.Utf8,
+                                                   'siren': pl.Utf8}, ignore_errors=True,
                        null_values=['[ND]', 'NN'])
 
     # write to staging table
     t0 = time.time()
-    pldf.write_database(table_name='sirene_stocketab_staging', connection_uri=constring, if_exists='append')
+    pldf.write_database(table_name='sirene_stocketab_staging', connection=constring, if_table_exists='append')
     t1 = time.time()
     logger.info('Sending etab file to staging in {:.2f} seconds'.format(t1 - t0))
 
@@ -291,112 +293,111 @@ def process_etab_fragment(filename: str) -> None:
     logger.info('time taken for upsert to live etab table: {}'.format(round(t1 - t0)))
 
 
-def run_etab():
+def main_etab():
     global download_latest_file
     global unzip_latest_file
     global clean_unzipped_file
     global split_clean_file
     global process_fragments
 
-    current_date_month = datetime.datetime.now().month
-    current_date_year = datetime.datetime.now().year
+    current_date_month: int = datetime.datetime.now().month
+    current_date_year: int = datetime.datetime.now().year
     filestring = f'{current_date_year}-{current_date_month:02d}-01-StockEtablissement_utf8.zip'
-    try:
-        logger.info(f'sending request with filestring: {filestring}')
-        # check if zipfile is not already in the dir
-        if filestring not in os.listdir():
-            logger.error(f'file {filestring} does not exist or {len(os.listdir("fragments"))} is not 1')
+    logger.info(f'sending request with filestring: {filestring}')
+
+    # check if zipfile is not already in the dir
+    if filestring not in os.listdir():
+        logger.error(f'file {filestring} does not exist or {len(os.listdir("fragments"))} is not 1')
+    t0 = time.time()
+
+    logger.info(f'no fragments found in file, downloading new file')
+
+    # download the lastest file
+    if download_latest_file:
+        process_download(filestring=filestring)
+
+    # unzip the file and return a .csv
+    if unzip_latest_file:
+        unzipped_file = unzip_file(filestring=filestring)
+    else:
+        unzipped_file = 'StockEtablissement_utf8.csv'
+
+    # process and filter the etab csv
+    if clean_unzipped_file:
+        clean_etab_file = etab_file_process(unzipped_file)
+    else:
+        clean_etab_file = 'StockEtablissement_clean.csv'
+
+    # split the processed file
+    if split_clean_file:
+        split_file(unzipped_file_name=clean_etab_file)
+
+    t1 = time.time()
+    download_time = round(t1 - t0)
+    logger.info(f'download and processing time: {download_time}')
+
+    # process_download leaves the section fragments to be processed
+    if process_fragments:
+        list_of_fragments = os.listdir('fragments')
+        fragcount = 0
         t0 = time.time()
-
-        logger.info(f'no fragments found in file, downloading new file')
-
-        # download the lastest file
-        if download_latest_file:
-            process_download(filestring=filestring)
-
-        # unzip the file and return a .csv
-        if unzip_latest_file:
-            unzipped_file = unzip_file(filestring=filestring)
-        else:
-            unzipped_file = 'StockEtablissement_utf8.csv'
-
-        # process and filter the etab csv
-        if clean_unzipped_file:
-            clean_etab_file = etab_file_process(unzipped_file)
-        else:
-            clean_etab_file = 'StockEtablissement_clean.csv'
-
-        # split the processed file
-        if split_clean_file:
-            split_file(unzipped_file_name=clean_etab_file)
-
+        fragment_times = []
+        for fragment in list_of_fragments:
+            if 'Etablissement' in filestring and 'Etablissement' in fragment:
+                f_t0 = time.time()
+                process_etab_fragment(filename='fragments/' + fragment)
+                os.remove('fragments/' + fragment)
+                fragcount += 1
+                f_t1 = time.time()
+                fragment_time_taken = round(f_t1 - f_t0)
+                fragment_times.append(fragment_time_taken)
+        avg_time_taken = round(sum(fragment_times) / len(fragment_times), 2)
+        logger.info('average time taken: {}'.format(avg_time_taken))
         t1 = time.time()
-        download_time = round(t1 - t0)
-        logger.info(f'download and processing time: {download_time}')
-
-        # process_download leaves the section fragments to be processed
-        if process_fragments:
-            list_of_fragments = os.listdir('fragments')
-            fragcount = 0
-            t0 = time.time()
-            fragment_times = []
-            for fragment in list_of_fragments:
-                if 'Etablissement' in filestring and 'Etablissement' in fragment:
-                    f_t0 = time.time()
-                    process_etab_fragment(filename='fragments/' + fragment)
-                    os.remove('fragments/' + fragment)
-                    fragcount += 1
-                    f_t1 = time.time()
-                    fragment_time_taken = round(f_t1 - f_t0)
-                    fragment_times.append(fragment_time_taken)
-            avg_time_taken = round(sum(fragment_times) / len(fragment_times), 2)
-        else:
-            avg_time_taken = 'NA'
-        t1 = time.time()
-
         time_taken = t1 - t0
-        pipeline_messenger(
-            title='Sirene Stock Etablissement Pipeline has run',
-            text=f'time taken: {time_taken}, average time per fragment: {avg_time_taken} seconds',
-            notification_type='pass'
-            )
+        logger.info('time taken for processing fragments: {}'.format(round(time_taken, 2)))
+    else:
+        logger.debug('process fragments not called: process_fragments bool set to False')
 
-    except Exception as e:
-        pipeline_messenger(
-            title='Sirene Stock Etablissement Pipeline has failed',
-            text=f'Error in file: {filestring} - {e}',
-            notification_type='fail'
-        )
-        global live_service
-        if live_service:
-            # check for each potentially produced file and remove it
-            if 'StockEtablissement_clean.csv' in os.listdir():
-                os.remove('StockEtablissement_clean.csv')
-            if 'StockEtablissement_utf8.csv' in os.listdir():
-                os.remove('StockEtablissement_utf8.csv')
-            if 'StockEtablissement_utf8.zip' in os.listdir():
-                os.remove('StockEtablissement_utf8.zip')
-            for file in os.listdir('fragments'):
-                if '.csv' in file:
-                    os.remove(os.path.join('fragments', file))
+    # if live_service, we need to make sure no excess files are left on the server
+    if live_service:
+        # check for each potentially produced file and remove it
 
+        # check for clean file
+        if 'StockEtablissement_clean.csv' in os.listdir():
+            os.remove('StockEtablissement_clean.csv')
+
+        # check for .csv file
+        if 'StockEtablissement_utf8.csv' in os.listdir():
+            os.remove('StockEtablissement_utf8.csv')
+
+        # check for .zip file
+        if 'StockEtablissement_utf8.zip' in os.listdir():
+            os.remove('StockEtablissement_utf8.zip')
+
+        # check for fragments
+        for file in os.listdir('fragments'):
+            if '.csv' in file:
+                os.remove(os.path.join('fragments', file))
+
+
+# bool to determine whether or not the service needs clearing after it runs/errors
+live_service = False
+
+# bool to determine whether or not to download the latest file
+download_latest_file = False
+
+# bool to determine whether or not to unzip the latest file
+unzip_latest_file = False
+
+# bool to determine whether or not to clean the unzipped csv
+clean_unzipped_file = False
+
+# bool to determine whether or not to fragment the cleaned csv file
+split_clean_file = False
+
+# bool to process fragments
+process_fragments = True
 
 if __name__ == '__main__':
-    # bool to determine whether or not the service needs clearing after it runs/errors
-    live_service = False
-
-    # bool to determine whether or not to download the latest file
-    download_latest_file = True
-
-    # bool to determine whether or not to unzip the latest file
-    unzip_latest_file = True
-
-    # bool to determine whether or not to clean the unzipped csv
-    clean_unzipped_file = True
-
-    # bool to determine whether or not to fragment the cleaned csv file
-    split_clean_file = True
-
-    # bool to process fragments
-    process_fragments = True
-    run_etab()
+    main_etab()

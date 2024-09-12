@@ -359,13 +359,7 @@ def process_legal_fragment(filename: str) -> None:
     logger.info('time taken to upsert into live tables: {}'.format(round(t1 - t0)))
 
 
-def run_legal():
-    global download_latest_file
-    global unzip_latest_file
-    global clean_unzipped_file
-    global split_clean_file
-    global process_fragments
-
+def main_legal():
     try:
         # in the future, this will be the curdate month
         current_date_month = datetime.datetime.now().month
@@ -374,7 +368,7 @@ def run_legal():
         logger.info(f'sending request with filestring: {filestring}')
 
         # check if zipfile is not already in the dir
-        print(os.listdir('fragments') == 0)
+        logger.info(os.listdir('fragments') == 0)
         t0 = time.time()
 
         # download file
@@ -442,6 +436,7 @@ def run_legal():
             text=str(traceback_str),
             notification_type='fail'
         )
+
         # ensure files are cleaned up before exiting if a live service
         if live_service:
             # check for each potentially produced file and remove it
@@ -456,23 +451,23 @@ def run_legal():
                     os.remove(os.path.join('fragments', file))
 
 
+# bool to determine whether or not the service needs clearing after it runs/errors
+live_service = False
+
+# bool to determine whether or not to download the latest file
+download_latest_file = False
+
+# bool to determine whether or not to unzip the latest file
+unzip_latest_file = False
+
+# bool to determine whether or not to clean the unzipped csv
+clean_unzipped_file = True
+
+# bool to determine whether or not to fragment the cleaned csv file
+split_clean_file = True
+
+# bool to process fragments
+process_fragments = True
+
 if __name__ == '__main__':
-    # bool to determine whether or not the service needs clearing after it runs/errors
-    live_service = False
-
-    # bool to determine whether or not to download the latest file
-    download_latest_file = True
-
-    # bool to determine whether or not to unzip the latest file
-    unzip_latest_file = True
-
-    # bool to determine whether or not to clean the unzipped csv
-    clean_unzipped_file = True
-
-    # bool to determine whether or not to fragment the cleaned csv file
-    split_clean_file = True
-
-    # bool to process fragments
-    process_fragments = True
-
-    run_legal()
+    main_legal()

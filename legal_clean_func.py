@@ -134,8 +134,10 @@ def map_company_type(input_dict: dict) -> str:
         '93': 'Foundation',  # Fondation
         '99': 'Other Legal Entity'
     }
-
-    return company_type_map[input_dict['LegalCategory'][0:2]]
+    try:
+        return company_type_map[input_dict['LegalCategory'][0:2]]
+    except KeyError:
+        return 'NA'
 
 
 def legal_file_process(filename: str = 'StockUniteLegale_utf8.csv') -> str:
@@ -209,7 +211,7 @@ def legal_file_process(filename: str = 'StockUniteLegale_utf8.csv') -> str:
     logger.debug(f'size of file before filtering category for {filename}: {len(pldf)}')
 
     # filtering only on societe commercial
-    pldf = pldf.filter(pl.col('LegalCategory').str.slice(0, 1) == '5')
+    # pldf = pldf.filter(pl.col('LegalCategory').str.slice(0, 1) == '5')
     logger.debug(f'size of file after filtering category for {filename}: {len(pldf)}')
 
     # map company_type ids
