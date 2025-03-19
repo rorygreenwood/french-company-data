@@ -1,8 +1,8 @@
 """
 runs both files
 """
-from etab_main import main_etab
-from legal_main import main_legal
+from etab_batching import main as main_etab
+from legal_batching import main as main_legal
 from utils import pipeline_messenger
 import sys
 import traceback

@@ -1,0 +1,15 @@
+The French Data Transfer pipeline is composed of two separate pipelines
+
+The first is the UniteLegale, or legal, pipeline, which contains data regarding french companies. It is
+reasonably similar to the data found in Companies House
+
+The Etablissement (Etab) file contains the address data for each company.
+
+It should be noted that the UniteLegale file MUST be processed before the Etab file. If not, there will be
+errors regarding the foreign key between preprod.organisation and preprod.geo_location. This will be because
+an organisation id hasnt been created for the addresses in Etab.
+
+Documentation and translations for each of the columns in the Legal and Etab file can be found at
+
+https://www.sirene.fr/static-resources/htm/v_sommaire_311.htm#7
+

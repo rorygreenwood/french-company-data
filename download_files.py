@@ -21,17 +21,7 @@ def process_download(filestring: str) -> str:
     files_url = 'https://files.data.gouv.fr/insee-sirene/'
     request_url = files_url + filestring
 
-    # check for
-    list_of_files = os.listdir()
-    downloaded = 0
-    for file in list_of_files:
-        if '.zip' in file and file == filestring:
-            logger.info('{} has been found'.format(filestring))
-            downloaded = 1
-
-    # if a zip file has not been found, download one
-    if downloaded == 0:
-
+    if filestring not in os.listdir():
         # send a request to recieve the file
         r = requests.get(request_url, stream=True, verify=False)
 

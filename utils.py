@@ -10,6 +10,8 @@ import re
 import logging
 import zipfile
 
+import polars as pl
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
 
@@ -127,3 +129,23 @@ def unzip_file(filename: str) -> str:
             output = infolist[0].filename
         zip_ref.close()
     return output
+
+
+def zip_csv_to_parquet(zip_file_path: str,
+                       parquet_name: str, schema: dict) -> int:
+    with zipfile.ZipFile(zip_file_path, 'r') as zip_obj:
+        csv_file_name = zip_obj.namelist()[0]
+        with zip_obj.open(csv_file_name) as csv_file:
+            df = pl.read_csv(csv_file, schema_overrides=schema, null_values=['[ND]', 'NN'])
+            df.write_parquet(parquet_name, compression='gzip')
+            df_size = len(df)
+            df = None  # unassign to free memory
+    return df_size
+
+
+def file_cleanup(file_list: list):
+    for file in file_list:
+        try:
+            os.remove(file)
+        except Exception as e:
+            logger.error(e)
