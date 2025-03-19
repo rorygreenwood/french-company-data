@@ -15,22 +15,6 @@ run_etab = True
 run_legal = True
 
 if __name__ == '__main__':
-    if run_etab:
-        try:
-            main_etab()
-            pipeline_messenger(
-                title='Sirene Data Transfer (Etab) Notification',
-                text='Etab Pipeline has finished running',
-                notification_type='pass'
-            )
-        except Exception as e:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            traceback_str = traceback.format_exception(exc_type, exc_value, exc_traceback)
-            pipeline_messenger(
-                title='Sirene Data Transfer (Etab) Notification',
-                text=str(traceback_str),
-                notification_type='fail'
-            )
 
     if run_legal:
         try:
@@ -48,4 +32,23 @@ if __name__ == '__main__':
                 text=str(traceback_str),
                 notification_type='fail'
             )
+
+    if run_etab:
+        try:
+            main_etab()
+            pipeline_messenger(
+                title='Sirene Data Transfer (Etab) Notification',
+                text='Etab Pipeline has finished running',
+                notification_type='pass'
+            )
+        except Exception as e:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            traceback_str = traceback.format_exception(exc_type, exc_value, exc_traceback)
+            pipeline_messenger(
+                title='Sirene Data Transfer (Etab) Notification',
+                text=str(traceback_str),
+                notification_type='fail'
+            )
+
+
 
