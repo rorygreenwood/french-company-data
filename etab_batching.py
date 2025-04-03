@@ -3,15 +3,14 @@
 2. open zip
 3. batch_load csv
 """
-import os
-import traceback
-import zipfile
-import time
 import datetime
 import hashlib
+import os
+import time
+import traceback
 
-import requests
 import polars as pl
+import requests
 
 from utils import logger, connect_preprod, constring, file_cleanup, pipeline_messenger, \
     zip_csv_to_parquet
