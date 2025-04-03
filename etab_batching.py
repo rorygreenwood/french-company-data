@@ -17,7 +17,6 @@ from utils import logger, connect_preprod, constring, file_cleanup, pipeline_mes
 
 cursor, db = connect_preprod()
 
-
 def create_address_line_1(input_dict: dict) -> str:
     """
     creates a concat of the columns AddressBuildingBlock, AddressNumber and AddressNumberSubUnit
